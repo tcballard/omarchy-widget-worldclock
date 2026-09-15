@@ -2,11 +2,24 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
 import qs.Commons
+import qs.Ui as Ui
 import "Model.js" as Model
 
 Item {
     id: root
     required property var widgetContext
+    property bool editingCities: false
+    readonly property var appearance: widgetContext.appearance || ({})
+    readonly property string labelFamily: typeof appearance.fontFamily === "string" ? appearance.fontFamily : Style.font.family
+    function editCities() {
+        if(!widgetContext.requestInput) { error="Update Widget Core to enable the city editor"; return; }
+        editor.reset(); editingCities=true; widgetContext.requestInput(true); editor.forceActiveFocus();
+    }
+    function closeEditor() { editingCities=false; widgetContext.requestInput(false); }
+    function saveCities(value) {
+        var settings=Object.assign({},widgetContext.settings,{cities:value});
+        if(!widgetContext.saveSettings(settings)) editor.message="Core is busy. Try Save again.";
+    }
     readonly property var cities: Model.cities(widgetContext.settings)
     property var rows: []
     property string error: ""
@@ -48,11 +61,12 @@ Item {
         }
     }
     ColumnLayout {
+        visible:!root.editingCities
         anchors.fill:parent; anchors.margins:Style.space(14); spacing:Style.space(8)
         RowLayout {
             Layout.fillWidth:true
-            Label { text:"AROUND THE WORLD"; color:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
-            Label { text:"24H"; color:Color.accent; font.pixelSize:Style.font.bodySmall }
+            Label { text:"World Clock"; font.family:root.labelFamily; font.pixelSize:Style.font.title || Style.font.heading; Layout.fillWidth:true }
+            Ui.Button { text:"Edit cities";focusable:true;fontSize:Style.font.bodySmall;onClicked:root.editCities() }
         }
         ListView {
             id:list
@@ -61,22 +75,32 @@ Item {
             delegate:Item {
                 required property var modelData
                 width:ListView.view.width; height:Style.space(root.widgetContext.sizeName==="compact"?43:54)
-                Rectangle { anchors.bottom:parent.bottom; width:parent.width; height:1; color:Color.muted; opacity:0.18 }
+                Rectangle { anchors.bottom:parent.bottom; width:parent.width; height:1; color:Color.foreground; opacity:typeof root.appearance.separatorAlpha==="number"?Math.max(0,Math.min(1,root.appearance.separatorAlpha)):0.07 }
                 RowLayout {
                     anchors.fill:parent; spacing:Style.space(10)
-                    Rectangle { width:Style.space(5); height:Style.space(5); color:modelData.day?Color.accent:Color.muted; opacity:modelData.day?1:0.45 }
+                    Rectangle { width:Style.space(5); height:Style.space(5);radius:width/2; color:modelData.day?Color.accent:Color.muted; opacity:modelData.day?1:0.45 }
                     ColumnLayout {
                         Layout.fillWidth:true; spacing:Style.space(2)
-                        Label { text:modelData.label; font.bold:true; Layout.fillWidth:true }
+                        Label { text:modelData.label; font.family:root.labelFamily; Layout.fillWidth:true }
                         Label { text:modelData.date+(modelData.relative?" · "+modelData.relative:""); color:modelData.valid?Color.muted:Color.urgent; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
                     }
                     Label { visible:root.widgetContext.sizeName==="wide"; text:modelData.offset; color:Color.muted; font.pixelSize:Style.font.bodySmall }
-                    Label { text:modelData.time; font.pixelSize:Style.font.heading; font.bold:true; color:modelData.valid?Color.foreground:Color.urgent }
+                    Label { text:modelData.time; font.pixelSize:Style.font.heading; color:modelData.valid?Color.foreground:Color.urgent }
                 }
             }
             Label { anchors.centerIn:parent; text:root.cities.length?"Updating…":"No cities configured"; visible:root.rows.length===0 && !root.error }
         }
         Label { text:root.error; visible:text!==""; color:Color.urgent; Layout.fillWidth:true; wrapMode:Text.Wrap }
-        Label { text:root.error?"Displayed times may be stale":"Bright dot: 07–19 local · Scroll for more cities"; color:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true; wrapMode:Text.Wrap }
+        Label { text:root.error?"Displayed times may be stale":"24-hour time · Bright dot: daytime"; font.family:root.labelFamily;color:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true; wrapMode:Text.Wrap }
+    }
+    CityEditor {
+        id:editor;objectName:"city-editor";anchors.fill:parent;anchors.margins:Style.space(14);visible:root.editingCities
+        initial:root.cities;family:root.labelFamily;busy:root.widgetContext.saving || false
+        onCancelled:root.closeEditor()
+        onSubmitted:function(value){root.saveCities(value)}
+        Connections {
+            target:root.widgetContext;ignoreUnknownSignals:true
+            function onSaveErrorChanged() { if(root.widgetContext.saveError) editor.message=root.widgetContext.saveError; }
+        }
     }
 }
