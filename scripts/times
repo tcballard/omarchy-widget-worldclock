@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+# Bounded local timezone conversion; no network or user shell evaluation.
+set -euo pipefail
+export LC_ALL=C
+[[ $# -ge 2 && $# -le 13 && "$1" =~ ^[0-9]{1,11}$ ]] || exit 2
+epoch=$1
+shift
+for zone in "$@"; do
+  if [[ ${#zone} -le 100 && "$zone" =~ ^[A-Za-z0-9_+-]+(/[A-Za-z0-9_+-]+)*$ && "$zone" != *..* && -f "/usr/share/zoneinfo/$zone" ]]; then
+    TZ="$zone" date --date="@$epoch" '+%H:%M|%a %d %b|%:z|%H|%Y-%m-%d' || printf 'ERROR\n'
+  else
+    printf 'ERROR\n'
+  fi
+done
