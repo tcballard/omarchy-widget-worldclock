@@ -8,18 +8,9 @@ import "Model.js" as Model
 Item {
     id: root
     required property var widgetContext
-    property bool editingCities: false
     readonly property var appearance: widgetContext.appearance || ({})
     readonly property string labelFamily: typeof appearance.fontFamily === "string" ? appearance.fontFamily : Style.font.family
-    function editCities() {
-        if(!widgetContext.requestInput) { error="Update Widget Core to enable the city editor"; return; }
-        editor.reset(); editingCities=true; widgetContext.requestInput(true); editor.forceActiveFocus();
-    }
-    function closeEditor() { editingCities=false; widgetContext.requestInput(false); }
-    function saveCities(value) {
-        var settings=Object.assign({},widgetContext.settings,{cities:value});
-        if(!widgetContext.saveSettings(settings)) editor.message="Core is busy. Try Save again.";
-    }
+    function openSettings() { widgetContext.requestConfigure(); }
     readonly property var cities: Model.cities(widgetContext.settings)
     property var rows: []
     property string error: ""
@@ -60,47 +51,102 @@ Item {
             } catch(e) { root.error="Time update failed · check coreutils and tzdata"; }
         }
     }
+    readonly property bool analogue: widgetContext.settings.displayMode === "analogue"
+    readonly property bool compact: height < Style.space(240)
+    readonly property var home: rows.find(function(r) { return r.zone === (root.widgetContext.settings.homeZone || "Europe/London") && r.valid; }) || rows.find(function(r) { return r.valid; }) || null
     ColumnLayout {
-        visible:!root.editingCities
-        anchors.fill:parent; anchors.margins:Style.space(14); spacing:Style.space(8)
-        RowLayout {
-            Layout.fillWidth:true
-            Label { text:"World Clock"; font.family:root.labelFamily; font.pixelSize:Style.font.title || Style.font.heading; Layout.fillWidth:true }
-            Ui.Button { text:"Edit cities";focusable:true;fontSize:Style.font.bodySmall;onClicked:root.editCities() }
-        }
+        anchors.fill: parent
+        anchors.margins: Style.space(4)
+        anchors.topMargin: Style.space(25)
+        spacing: Style.space(root.compact ? 3 : 10)
         ListView {
             id:list
-            Layout.fillWidth:true; Layout.fillHeight:true; clip:true
-            model:root.rows; spacing:0
+            objectName:"city-strip"
+            Layout.fillWidth:true; Layout.fillHeight:true
+            orientation:ListView.Horizontal
+            clip:true
+            boundsBehavior:Flickable.StopAtBounds
+            model:root.rows
+            activeFocusOnTab:true
+            Keys.onRightPressed:incrementCurrentIndex()
+            Keys.onLeftPressed:decrementCurrentIndex()
+            highlightRangeMode:ListView.ApplyRange
             delegate:Item {
+                id:city
                 required property var modelData
-                width:ListView.view.width; height:Style.space(root.widgetContext.sizeName==="compact"?43:54)
-                Rectangle { anchors.bottom:parent.bottom; width:parent.width; height:1; color:Color.foreground; opacity:typeof root.appearance.separatorAlpha==="number"?Math.max(0,Math.min(1,root.appearance.separatorAlpha)):0.07 }
-                RowLayout {
-                    anchors.fill:parent; spacing:Style.space(10)
-                    Rectangle { width:Style.space(5); height:Style.space(5);radius:width/2; color:modelData.day?Color.accent:Color.muted; opacity:modelData.day?1:0.45 }
-                    ColumnLayout {
-                        Layout.fillWidth:true; spacing:Style.space(2)
-                        Label { text:modelData.label; font.family:root.labelFamily; Layout.fillWidth:true }
-                        Label { text:modelData.date+(modelData.relative?" · "+modelData.relative:""); color:modelData.valid?Color.muted:Color.urgent; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
+                readonly property bool isHome:root.home !== null && root.home.zone === modelData.zone
+                readonly property color ink:isHome ? Color.accent : Color.foreground
+                width:list.width / Math.max(1,Math.floor(list.width/Style.space(155)))
+                height:list.height
+                Rectangle { anchors.right:parent.right; height:parent.height; width:1; color:Color.muted; opacity:0.3 }
+                ColumnLayout {
+                    anchors.fill:parent; anchors.leftMargin:Style.space(10); anchors.rightMargin:Style.space(10)
+                    spacing:Style.space(root.compact ? 2 : 8)
+                    Label { text:city.modelData.label.toUpperCase(); font.family:root.labelFamily; font.letterSpacing:1; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
+                    Item {
+                        Layout.fillWidth:true; Layout.fillHeight:true
+                        Layout.minimumHeight:Style.space(root.analogue ? 48 : 30)
+                        Label {
+                            anchors.centerIn:parent; width:parent.width; horizontalAlignment:Text.AlignHCenter
+                            visible:!root.analogue || !city.modelData.valid
+                            text:city.modelData.time; color:city.ink; font.family:root.labelFamily
+                            font.pixelSize:Math.min(parent.width*0.28,Style.space(root.compact ? 34 : 56))
+                        }
+                        Canvas {
+                            id:dial
+                            visible:root.analogue && city.modelData.valid
+                            anchors.centerIn:parent
+                            width:Math.min(parent.width,parent.height,Style.space(140)); height:width
+                            property string clockTime:city.modelData.time
+                            property color ink:city.ink
+                            property color muted:Color.muted
+                            onClockTimeChanged:requestPaint()
+                            onInkChanged:requestPaint()
+                            onMutedChanged:requestPaint()
+                            onWidthChanged:requestPaint()
+                            onVisibleChanged:if(visible)requestPaint()
+                            onPaint: {
+                                var ctx=getContext("2d"), r=width/2-2;
+                                if(r<=0)return;
+                                ctx.reset();ctx.translate(width/2,height/2);
+                                ctx.strokeStyle=muted;ctx.lineWidth=1;
+                                ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
+                                for(var i=0;i<12;i++) {
+                                    var a=i*Math.PI/6;
+                                    ctx.beginPath();ctx.moveTo(Math.sin(a)*r*.85,-Math.cos(a)*r*.85);
+                                    ctx.lineTo(Math.sin(a)*r*.96,-Math.cos(a)*r*.96);ctx.stroke();
+                                }
+                                var parts=clockTime.split(":"), h=Number(parts[0]), m=Number(parts[1]);
+                                function hand(angle,length,thickness) {
+                                    ctx.strokeStyle=ink;ctx.lineWidth=thickness;ctx.lineCap="round";
+                                    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.sin(angle)*r*length,-Math.cos(angle)*r*length);ctx.stroke();
+                                }
+                                hand((h%12+m/60)*Math.PI/6,.52,3);
+                                hand(m*Math.PI/30,.78,2);
+                                ctx.fillStyle=ink;ctx.beginPath();ctx.arc(0,0,2.5,0,Math.PI*2);ctx.fill();
+                            }
+                        }
                     }
-                    Label { visible:root.widgetContext.sizeName==="wide"; text:modelData.offset; color:Color.muted; font.pixelSize:Style.font.bodySmall }
-                    Label { text:modelData.time; font.pixelSize:Style.font.heading; color:modelData.valid?Color.foreground:Color.urgent }
+                    Label { text:!city.modelData.valid ? "Unknown timezone" : (city.isHome ? "Home" : Model.homeOffset(city.modelData,root.home)) + " · " + (city.modelData.day ? "Day" : "Night"); color:city.isHome?Color.accent:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
+                    Label { visible:!root.compact; text:Model.homeDay(city.modelData,root.home) || city.modelData.date; color:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
+                    Rectangle {
+                        visible:!root.compact && city.modelData.valid
+                        Layout.fillWidth:true; height:Style.space(5); color:Qt.rgba(Color.muted.r,Color.muted.g,Color.muted.b,.25)
+                        Rectangle { x:parent.width*7/24; width:parent.width*12/24; height:parent.height; color:Color.accent; opacity:.35 }
+                        Rectangle { x:Math.max(0,Math.min(parent.width-width,parent.width*Model.minuteOfDay(city.modelData)/1440)); width:2; height:parent.height+4; anchors.verticalCenter:parent.verticalCenter; color:city.ink }
+                    }
                 }
             }
             Label { anchors.centerIn:parent; text:root.cities.length?"Updating…":"No cities configured"; visible:root.rows.length===0 && !root.error }
         }
-        Label { text:root.error; visible:text!==""; color:Color.urgent; Layout.fillWidth:true; wrapMode:Text.Wrap }
-        Label { text:root.error?"Displayed times may be stale":"24-hour time · Bright dot: daytime"; font.family:root.labelFamily;color:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true; wrapMode:Text.Wrap }
+        Label { text:root.error; visible:text!==""; color:Color.urgent; Layout.fillWidth:true; wrapMode:Text.Wrap; font.pixelSize:Style.font.bodySmall }
     }
-    CityEditor {
-        id:editor;objectName:"city-editor";anchors.fill:parent;anchors.margins:Style.space(14);visible:root.editingCities
-        initial:root.cities;family:root.labelFamily;busy:root.widgetContext.saving || false
-        onCancelled:root.closeEditor()
-        onSubmitted:function(value){root.saveCities(value)}
-        Connections {
-            target:root.widgetContext;ignoreUnknownSignals:true
-            function onSaveErrorChanged() { if(root.widgetContext.saveError) editor.message=root.widgetContext.saveError; }
-        }
+    Ui.Button {
+        objectName:"settings-gear"
+        anchors.right:parent.right; anchors.top:parent.top
+        text:"⚙"; tooltipText:"World Clock settings"; focusable:true
+        fontSize:Style.font.heading
+        Accessible.name:"World Clock settings"
+        onClicked:root.openSettings()
     }
 }
