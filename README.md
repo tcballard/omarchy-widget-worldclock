@@ -2,7 +2,7 @@
 
 One native desktop widget showing multiple time zones together. A compact city-and-time board inspired by Bloomberg Launchpad, hosted by [Omarchy Widget Core](https://github.com/tcballard/omarchy-widget-core).
 
-**Experimental 0.1.0 · Core API 1.** This is a widget package with `widget.json`, not a Quattro plugin. Core owns its window, placement, theme scaling and persistent settings.
+**Experimental 0.1.1 · Core API 1, Core 0.1.1 required for the editor.** This is a widget package with `widget.json`, not a Quattro plugin. Core owns its window, placement, theme scaling and persistent settings.
 
 Default cities: London, New York, Chicago, Amsterdam, Tokyo and Sydney. Every row shows 24-hour local time and date. Date differences are relative to your computer's local date. Wide size also shows UTC offsets. Bright dots indicate 07:00–18:59 local time; they are an approximate daytime cue, not sunrise/sunset or market-open status. Scroll to see additional cities in smaller sizes.
 
@@ -28,6 +28,26 @@ Use Core's Arrange controls to move the card, select compact/standard/wide or sw
 
 ## Choose cities
 
+Click **Edit cities** in the card. Search the common-city catalogue and click a
+timezone to add it, or enter an IANA ID and choose **Add ID**. Edit labels inline,
+use the arrows to reorder and × to remove. **Save** persists the list; **Cancel**
+discards edits. At most twelve cities are supported. Custom IDs not present in
+the local timezone database will show an error in their row after saving.
+
+The editor preserves other settings, including `appearance`. Core's softer
+frame and theme-owned appearance options are documented in
+[Widget appearance](https://github.com/tcballard/omarchy-widget-core/blob/main/docs/widget-appearance.md).
+
+### Upgrade from 0.1.0
+
+First update Core from its checkout with `git pull --ff-only` and
+`bash install-local --update`. Then run the same two commands from this widget's
+checkout. The updater keeps cities and placement and retains the old package
+in a backup directory printed by the command. It temporarily hides all Core
+widgets and shows them after replacement. Finish any unsaved editor work first.
+
+### Command-line configuration
+
 Settings belong to this single widget. Keep between one and twelve cities, in display order, using IANA timezone IDs. Custom labels are supported. Configure through Core:
 
 ```bash
@@ -35,7 +55,7 @@ Settings belong to this single widget. Keep between one and twelve cities, in di
 omarchy-shell io.github.tcballard.widget-core refresh
 ```
 
-A city can also be a timezone string such as `"Europe/Amsterdam"`. Core replaces the entire settings object. An empty list shows an empty state; entries after the first twelve are ignored. Invalid timezones display an error in their own row. There is no in-widget city editor in this version.
+A city can also be a timezone string such as `"Europe/Amsterdam"`. Core replaces the entire settings object. An empty list shows an empty state; entries after the first twelve are ignored. Invalid timezones display an error in their own row.
 
 ## How it works
 
@@ -55,6 +75,6 @@ Model tests exercise real timezone conversion, UK DST transitions, staggered US/
 
 Before calling this desktop-verified: install it through Core on Omarchy, check all sizes, configure/reorder cities, change theme, restart the shell, and confirm hide/fullscreen stops updates and saved settings survive. No live Omarchy test has been performed in this build environment.
 
-To replace a snapshot, follow Core's documented hide/refresh/remove/install flow and back up settings first; Core 0.1.0 has no settings-preserving package upgrade operation.
+To replace this widget's snapshot, use `bash install-local --update` as described above. It preserves the separate layout/settings file and retains a backup of the old package. Core's generic install command still refuses replacement.
 
 MIT licensed.
