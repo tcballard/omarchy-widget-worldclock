@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+core="$HOME/.config/omarchy/plugins/io.github.tcballard.widget-core/bin/omarchy-widget"
+[[ -x "$core" ]] || { echo 'Install omarchy-widget-core first.' >&2; exit 1; }
+"$core" install "$root"
+"$core" add io.github.tcballard.worldclock
+omarchy-shell io.github.tcballard.widget-core refresh
