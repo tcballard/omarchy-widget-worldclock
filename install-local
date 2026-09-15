@@ -3,6 +3,29 @@ set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 core="$HOME/.config/omarchy/plugins/io.github.tcballard.widget-core/bin/omarchy-widget"
 [[ -x "$core" ]] || { echo 'Install omarchy-widget-core first.' >&2; exit 1; }
-"$core" install "$root"
-"$core" add io.github.tcballard.worldclock
+[[ $# -eq 0 || ( $# -eq 1 && "$1" == --update ) ]] || { echo 'Usage: bash install-local [--update]' >&2; exit 1; }
+if [[ "${1:-}" == --update ]]; then
+  "$core" validate "$root" >/dev/null
+  data="${XDG_DATA_HOME:-$HOME/.local/share}/omarchy/widgets"
+  destination="$data/packages/io.github.tcballard.worldclock"
+  [[ "$data" == /* && -d "$destination" && ! -L "$destination" ]] || { echo 'No regular installed World Clock found.' >&2; exit 1; }
+  mkdir -- "$data/.operation-lock" || { echo 'Widget registry busy.' >&2; exit 1; }
+  trap 'rmdir -- "$data/.operation-lock"' EXIT
+  stage=$(mktemp -d "$data/.worldclock-update.XXXXXXXX")
+  cp -- "$root/widget.json" "$root/WorldClock.qml" "$root/CityEditor.qml" "$root/Label.qml" "$root/Model.js" "$root/LICENSE" "$stage/"
+  cp -R -- "$root/scripts" "$stage/"
+  "$core" validate "$stage" >/dev/null
+  backup=$(mktemp -d "$data/.worldclock-backup.XXXXXXXX")
+  omarchy-shell io.github.tcballard.widget-core hide
+  mv -- "$destination" "$backup/package"
+  if ! mv -- "$stage" "$destination"; then
+    mv -- "$backup/package" "$destination"
+    exit 1
+  fi
+  echo "Previous widget saved at $backup/package; cities and placement preserved."
+else
+  "$core" install "$root"
+  "$core" add io.github.tcballard.worldclock
+fi
 omarchy-shell io.github.tcballard.widget-core refresh
+omarchy-shell io.github.tcballard.widget-core show
