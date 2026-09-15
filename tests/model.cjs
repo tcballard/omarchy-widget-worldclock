@@ -1,0 +1,23 @@
+const assert=require('node:assert/strict');
+const {execFileSync}=require('node:child_process');
+const {join}=require('node:path');
+const m=require('../Model.js');
+const helper=join(__dirname,'../scripts/times');
+const times=(instant,zones)=>execFileSync('bash',[helper,String(Date.parse(instant)/1000),...zones],{encoding:'utf8'});
+const cities=m.cities({cities:[{label:'London',zone:'Europe/London'},'America/New_York','Asia/Kolkata','Pacific/Kiritimati','Bad/Zone']});
+const rows=m.rows(times('2026-03-20T12:30:00Z',cities.map(c=>c.zone)),cities,'2026-03-20');
+assert.equal(rows[0].time,'12:30');
+assert.equal(rows[1].time,'08:30'); // US DST started, UK has not.
+assert.equal(rows[2].time,'18:00');
+assert.equal(rows[2].offset,'UTC+05:30');
+assert.equal(rows[3].relative,'+1 day');
+assert.equal(rows[4].valid,false);
+assert.equal(times('2026-03-29T00:59:00Z',['Europe/London']).slice(0,5),'00:59');
+assert.equal(times('2026-03-29T01:00:00Z',['Europe/London']).slice(0,5),'02:00');
+assert.equal(times('2026-10-25T01:00:00Z',['Europe/London']).slice(0,5),'01:00');
+assert.equal(times('2026-01-01T00:00:00Z',['../../etc/passwd','$(touch /tmp/nope)']), 'ERROR\nERROR\n');
+assert.equal(m.cities({cities:Array(30).fill('UTC')}).length,12);
+assert.deepEqual(m.cities(null),[]);
+assert.throws(()=>m.rows('',cities,'2026-03-20'));
+assert.equal(m.rows('12:00|Fri 01 Jan|+14:00|12|2026-01-03',[cities[0]],'2026-01-01')[0].relative,'+2 days');
+console.log('PASS: DST transitions, staggered DST, half-hour offsets, rollover, invalid zones, bounded settings and partial data');
