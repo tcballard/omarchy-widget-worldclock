@@ -1,3 +1,4 @@
+var catalog=["Europe/London","Europe/Amsterdam","Europe/Paris","Europe/Berlin","Europe/Zurich","Europe/Dublin","Europe/Madrid","Europe/Rome","Europe/Stockholm","Europe/Warsaw","Europe/Helsinki","Europe/Athens","Europe/Istanbul","America/New_York","America/Chicago","America/Denver","America/Los_Angeles","America/Toronto","America/Vancouver","America/Sao_Paulo","America/Mexico_City","Asia/Tokyo","Asia/Hong_Kong","Asia/Singapore","Asia/Shanghai","Asia/Seoul","Asia/Kolkata","Asia/Kathmandu","Asia/Dubai","Asia/Bangkok","Asia/Taipei","Australia/Sydney","Australia/Melbourne","Australia/Perth","Australia/Adelaide","Pacific/Auckland","Pacific/Honolulu","Africa/Johannesburg","Africa/Cairo","UTC"];
 function cities(settings) {
     if (!settings || !Array.isArray(settings.cities)) return [];
     return settings.cities.slice(0,12).map(function(c) {
