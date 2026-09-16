@@ -105,6 +105,6 @@ Window {
    call(window,"setLight",False)
   if warnings:
    print("\n".join(warnings));app.exit(1);return
-  print("PASS: gear-only controls, mode drafts and reload, city edits, home fallback, invalid IDs, both modes at Core content sizes, dark/light rendering")
+  print("PASS: settings callback (Core owns gear), mode drafts and reload, city edits, home fallback, invalid IDs, both modes at Core content sizes, dark/light rendering")
   app.exit(0)
  QTimer.singleShot(300,check);sys.exit(app.exec())

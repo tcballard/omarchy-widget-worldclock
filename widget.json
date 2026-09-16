@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "kind": "desktop-widget",
-  "coreApi": 2,
+  "coreApi": 3,
   "id": "io.github.tcballard.worldclock",
   "name": "World Clock",
   "version": "0.1.2",
@@ -42,5 +42,17 @@
     "medium",
     "large"
   ],
-  "defaultFamily": "medium"
+  "defaultFamily": "medium",
+  "requires": [
+    "acknowledged-actions",
+    "frame-settings",
+    "command-dependencies"
+  ],
+  "dependencies": {
+    "commands": [
+      "bash",
+      "date",
+      "timeout"
+    ]
+  }
 }

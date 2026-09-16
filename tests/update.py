@@ -12,7 +12,7 @@ from pathlib import Path
 with open(Path(os.environ['HOME'])/'calls','a') as f:f.write(json.dumps(sys.argv[1:])+'\\n')
 if sys.argv[1] in ['validate','update','install']:
  p=Path(sys.argv[2]);m=json.loads((p/'widget.json').read_text())
- assert m['coreApi']==2 and (p/m['settingsEntryPoint']).is_file()
+ assert m['coreApi']==3 and (p/m['settingsEntryPoint']).is_file()
  assert (p/'scripts/times').is_file()
  assert not (p/'test-results').exists() and not (p/'.git').exists()
 if os.environ.get('FAIL_VALIDATE') and sys.argv[1]=='validate':sys.exit(1)
@@ -31,4 +31,4 @@ if os.environ.get('FAIL_VALIDATE') and sys.argv[1]=='validate':sys.exit(1)
  assert result.returncode!=0
  assert len((home/'calls').read_text().splitlines())==1
  assert state.read_text()==saved
-print('PASS: API 2 staged install/update, no direct state mutation, validation failure stops update, stage cleanup')
+print('PASS: API 3 staged install/update, no direct state mutation, validation failure stops update, stage cleanup')
