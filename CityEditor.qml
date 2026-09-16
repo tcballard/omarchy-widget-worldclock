@@ -23,7 +23,11 @@ FocusScope {
         if(draft.some(function(c){return c.zone===zone})) { message="That timezone is already listed"; return; }
         draft=draft.concat([{label:zone.split("/").pop().replace(/_/g," "),zone:zone}]); search.text="";message="";
     }
-    Keys.onEscapePressed: cancelled()
+    // Embedded API 2 editors let Core own Escape/Cancel, including its busy guard.
+    Keys.onEscapePressed: function(event) {
+        if(showActions) cancelled();
+        else event.accepted=false;
+    }
     ColumnLayout {
         anchors.fill:parent; spacing:Style.space(8)
         RowLayout {

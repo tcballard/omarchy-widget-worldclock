@@ -56,3 +56,18 @@ Timezone tests use the real conversion helper, including DST boundaries, fractio
 Qt process/theme fixtures do not establish live Quickshell, Wayland, Core save acknowledgement or compositor compatibility. On Omarchy, verify opening the settings window, Save/Cancel, mode persistence after restart, scrolling all cities, theme changes and package update/rollback before calling this desktop-verified.
 
 MIT licensed.
+
+
+### Widget Core implementation stack
+
+The API 2 integration is the first milestone of the Widget Core implementation
+stack. Embedded city settings forward Escape to Core's Cancel handling; the
+standalone editor retains its own Cancel signal. `tests/qml_smoke.py` checks this
+keyboard propagation alongside the existing rendering and draft checks.
+
+The companion Core foundation PR adds a two-instance integration check using this
+package's real settings editor, Core's production settings controller and the
+Rust registry. It covers Save/Cancel, stale revisions, independent cities,
+workspace preservation and fresh-process disk reopening. This remains portable
+Qt evidence: live Quickshell settings windows, reboot, scaling and monitor
+acceptance are outstanding.
