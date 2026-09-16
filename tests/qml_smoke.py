@@ -1,7 +1,7 @@
 import os,sys,tempfile,json,subprocess
 from pathlib import Path
 os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
-from PySide6.QtCore import QUrl,QTimer,QObject,QMetaObject,Q_ARG
+from PySide6.QtCore import QUrl,QTimer,QObject,QMetaObject,Q_ARG,Qt
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow
@@ -40,7 +40,11 @@ Window {
   function populate() { rows=Model.rows("12:30|Tue 15 Sep|+01:00|12|2026-09-15\\n07:30|Tue 15 Sep|-04:00|07|2026-09-15\\n06:30|Tue 15 Sep|-05:00|06|2026-09-15\\n13:30|Tue 15 Sep|+02:00|13|2026-09-15\\n20:30|Tue 15 Sep|+09:00|20|2026-09-15\\n21:30|Tue 15 Sep|+10:00|21|2026-09-15",cities,"2026-09-15"); }
   Component.onCompleted:populate()
  }
- Widget.Settings { id:settings;objectName:"settings";anchors.fill:parent;visible:false;settingsContext:settingsContext }
+ Widget.Settings {
+  id:settings;objectName:"settings";anchors.fill:parent;visible:false;settingsContext:settingsContext
+  property bool cancelledByOwner:false
+  Keys.onEscapePressed:cancelledByOwner=true
+ }
 }
 ''')
  app=QGuiApplication([]);engine=QQmlApplicationEngine();engine.addImportPath(tmp)
@@ -81,6 +85,9 @@ Window {
   call(sc,"resetDraft",json.dumps(original))
   assert not clock.property("analogue")
   clock.setVisible(False);settings.setVisible(True)
+  call(editor,"forceActiveFocus")
+  QTest.keyClick(window,Qt.Key.Key_Escape)
+  assert settings.property("cancelledByOwner"), "Embedded city editor swallowed Core's Escape action"
   window.setWidth(520);window.setHeight(500)
   snapshot("settings")
   settings.setVisible(False);clock.setVisible(True)
