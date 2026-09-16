@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
 import qs.Commons
-import qs.Ui as Ui
 import "Model.js" as Model
 
 Item {
@@ -57,7 +56,7 @@ Item {
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: Style.space(4)
-        anchors.topMargin: Style.space(25)
+        anchors.topMargin: Style.space(4)
         spacing: Style.space(root.compact ? 3 : 10)
         ListView {
             id:list
@@ -141,12 +140,5 @@ Item {
         }
         Label { text:root.error; visible:text!==""; color:Color.urgent; Layout.fillWidth:true; wrapMode:Text.Wrap; font.pixelSize:Style.font.bodySmall }
     }
-    Ui.Button {
-        objectName:"settings-gear"
-        anchors.right:parent.right; anchors.top:parent.top
-        text:"⚙"; tooltipText:"World Clock settings"; focusable:true
-        fontSize:Style.font.heading
-        Accessible.name:"World Clock settings"
-        onClicked:root.openSettings()
-    }
+
 }
