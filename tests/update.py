@@ -12,8 +12,9 @@ from pathlib import Path
 with open(Path(os.environ['HOME'])/'calls','a') as f:f.write(json.dumps(sys.argv[1:])+'\\n')
 if sys.argv[1] in ['validate','update','install']:
  p=Path(sys.argv[2]);m=json.loads((p/'widget.json').read_text())
- assert m['coreApi']==3 and (p/m['settingsEntryPoint']).is_file()
- assert (p/'scripts/times').is_file()
+ assert m['coreApi']==3 and m['renderer']=='declarative'
+ assert 'declarative-v1' in m['requires']
+ assert sorted(x.name for x in p.iterdir())==['LICENSE','widget.json']
  assert not (p/'test-results').exists() and not (p/'.git').exists()
 if os.environ.get('FAIL_VALIDATE') and sys.argv[1]=='validate':sys.exit(1)
 ''');core.chmod(0o755)
