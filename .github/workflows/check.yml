@@ -16,7 +16,21 @@ jobs:
       - run: sudo apt-get update
       - run: sudo apt-get install -y libegl1 libopengl0 tzdata
       - run: pip install PySide6==6.11.2
-      - run: node tests/model.cjs
       - run: python3 tests/update.py
-      - run: python3 tests/qml_smoke.py
-      - run: bash -n install-local scripts/times
+      - run: bash -n install-local
+      - uses: actions/checkout@v4
+        with:
+          repository: tcballard/omarchy-widget-core
+          ref: acf16de9616f5a11e3d8fa3c1d841a583d2bf918
+          path: test-results/core
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@1.98.1
+      - run: cargo build --locked --manifest-path test-results/core/Cargo.toml
+      - run: |
+          mkdir -p /tmp/worldclock-package
+          cp widget.json LICENSE /tmp/worldclock-package/
+          test-results/core/target/debug/omarchy-widget validate /tmp/worldclock-package
+          cp widget.json test-results/core/examples/declarative-clock/widget.json
+      - run: python3 test-results/core/sdk/render_previews.py test-results/declarative-previews --package .
+      - run: python3 test-results/core/tests/declarative.py test-results/core/target/debug/omarchy-widget
+      - run: python3 test-results/core/tests/declarative_controller.py test-results/core/target/debug/omarchy-widget
