@@ -73,3 +73,9 @@ Qt evidence: live Quickshell settings windows, reboot, scaling and monitor
 acceptance are outstanding.
 
 This revision requires **Core API 3** and uses its shared settings gear. Older API 2 hosts reject installation. The declared helper commands are bash, date and timeout. Qt 6.11.2 component tests are separate from live Omarchy acceptance.
+
+Core API 3 owns the small settings gear at the top-right corner. The gear overlays
+that corner without reserving a header band; the clock keeps its content height.
+Core's capture tool supports this package's Quickshell imports with inert stubs,
+so a portable preview shows the inactive/loading surface. Live clock screenshots
+and keyboard focus still require a real Omarchy session.
