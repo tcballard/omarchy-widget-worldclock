@@ -1,10 +1,10 @@
 # Omarchy World Clock
 
-One native desktop widget showing multiple time zones together. A compact city-and-time board inspired by Bloomberg Launchpad, hosted by [Omarchy Widget Core](https://github.com/tcballard/omarchy-widget-core).
+One native desktop widget showing multiple time zones together. Choose Solar or Classic at standard/wide size, and Monolith or Twin at compact size, with analogue and digital views. Hosted by [Omarchy Widget Core](https://github.com/tcballard/omarchy-widget-core).
 
 **Experimental 0.1.1 · Core API 1, Core 0.1.1 required for the editor.** This is a widget package with `widget.json`, not a Quattro plugin. Core owns its window, placement, theme scaling and persistent settings.
 
-Default cities: London, New York, Chicago, Amsterdam, Tokyo and Sydney. Every row shows 24-hour local time and date. Date differences are relative to your computer's local date. Wide size also shows UTC offsets. Bright dots indicate 07:00–18:59 local time; they are an approximate daytime cue, not sunrise/sunset or market-open status. Scroll to see additional cities in smaller sizes.
+Default cities: London, New York, Chicago, Amsterdam, Tokyo and Sydney. The designs show up to five cities in Solar, four in Classic and Monolith, or two in Twin. Times are 24-hour; the analogue faces use 06:00–17:59 as daytime. More configured cities remain available when you switch designs.
 
 ## Install
 
@@ -18,7 +18,7 @@ bash install-local
 
 This copies the package, adds its single desktop placement and refreshes Core. It refuses to overwrite an installed snapshot. Requires Omarchy Quattro with Core 0.1.0, Bash, GNU coreutils and the system `tzdata` package. No network, account, API key or compiled widget helper is required.
 
-Open the manager to hide or arrange the clock:
+Use the clock header to switch between analogue and digital views, change designs, or edit cities. These choices are saved with the widget settings. The Solar dial places noon at the top and merges hands when configured cities are within 30 minutes; Classic shows four individual faces. Monolith focuses on the first city and Twin compares the first two. The first city is Home for relative offsets and day labels.\n\nOpen the manager to hide or arrange the clock:
 
 ```bash
 omarchy-shell io.github.tcballard.widget-core manage
