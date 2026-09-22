@@ -8,9 +8,9 @@
   "entryPoint": "WorldClock.qml",
   "defaultSize": "standard",
   "sizes": {
-    "compact": {"width": 340, "height": 360},
-    "standard": {"width": 420, "height": 450},
-    "wide": {"width": 580, "height": 450}
+    "compact": {"width": 280, "height": 280},
+    "standard": {"width": 420, "height": 260},
+    "wide": {"width": 580, "height": 280}
   },
   "defaults": {
     "cities": [
