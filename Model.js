@@ -10,12 +10,21 @@ function cities(settings) {
 function rows(text, entries, today) {
     var lines=text.trim().split("\n");
     if (lines.length !== entries.length) throw new Error("Incomplete time sample");
-    return entries.map(function(city,i) {
+    var result=entries.map(function(city,i) {
         var p=lines[i].split("|");
         if(p.length!==5 || !/^\d\d:\d\d$/.test(p[0]) || !/^[+-]\d\d:\d\d$/.test(p[2]) || !/^\d{4}-\d\d-\d\d$/.test(p[4]))
-            return {label:city.label,zone:city.zone,time:"—",date:"Unknown timezone",offset:"",day:false,relative:"",valid:false};
+            return {label:city.label,zone:city.zone,time:"—",date:"Unknown timezone",offset:"",day:false,relative:"",localDate:"",valid:false};
         var delta=Math.round((Date.parse(p[4]+"T00:00:00Z")-Date.parse(today+"T00:00:00Z"))/86400000);
-        return {label:city.label,zone:city.zone,time:p[0],date:p[1],offset:"UTC"+p[2],day:Number(p[3])>=7&&Number(p[3])<19,relative:delta?(delta>0?"+":"−")+Math.abs(delta)+" day"+(Math.abs(delta)>1?"s":""):"",valid:true};
+        return {label:city.label,zone:city.zone,time:p[0],date:p[1],offset:"UTC"+p[2],day:Number(p[3])>=7&&Number(p[3])<19,relative:delta?(delta>0?"+":"−")+Math.abs(delta)+" day"+(Math.abs(delta)>1?"s":""):"",localDate:p[4],valid:true};
+    });
+    var home=result[0];
+    function minutes(offset) { var m=/^UTC([+-])(\d\d):(\d\d)$/.exec(offset); return m ? (m[1]==="-"?-1:1)*(Number(m[2])*60+Number(m[3])) : 0; }
+    return result.map(function(row,i) {
+        if(!row.valid || !home.valid) return Object.assign({},row,{homeOffset:"",homeRelative:""});
+        var d=Math.round((Date.parse(row.localDate+"T00:00:00Z")-Date.parse(home.localDate+"T00:00:00Z"))/86400000);
+        var diff=minutes(row.offset)-minutes(home.offset), a=Math.abs(diff);
+        return Object.assign({},row,{homeRelative:d===0?"Today":d===1?"Tomorrow":d===-1?"Yesterday":(d>0?"+":"−")+Math.abs(d)+" days",
+            homeOffset:i===0?"Home":(diff<0?"−":"+")+Math.floor(a/60)+(a%60?":"+String(a%60).padStart(2,"0"):"")+"h"});
     });
 }
 if (typeof module !== "undefined") module.exports={cities:cities,rows:rows};
