@@ -74,11 +74,11 @@ Item {
     ColumnLayout {
         visible: !root.editingCities
         anchors.fill: parent
-        anchors.margins: Style.space(root.small ? 16 : 20)
+        anchors.margins: Style.space(root.small ? 12 : 14)
         spacing: Style.space(8)
         RowLayout {
             Layout.fillWidth: true
-            Label { text: "WORLD CLOCK"; font.bold: true; font.letterSpacing: 1.4; font.pixelSize: Style.font.bodySmall; color: Color.accent; Layout.fillWidth: true }
+            Label { text: root.small ? "CLOCK" : "WORLD CLOCK"; font.bold: true; font.letterSpacing: 1.4; font.pixelSize: Style.font.bodySmall; color: Color.accent; Layout.fillWidth: true }
             Ui.Button { text: root.viewName === "analogue" ? "Digital" : "Analogue"; fontSize: Style.font.bodySmall; onClicked: root.changeOption("view",root.viewName === "analogue" ? "digital" : "analogue") }
             Ui.Button { text: root.small ? (root.styleName === "twin" ? "Monolith" : "Twin") : (root.styleName === "classic" ? "Solar" : "Classic"); fontSize: Style.font.bodySmall; onClicked: root.changeOption("style",root.small ? (root.styleName === "twin" ? "monolith" : "twin") : (root.styleName === "classic" ? "solar" : "classic")) }
             Ui.Button { text: "Edit"; fontSize: Style.font.bodySmall; onClicked: root.editCities() }
@@ -87,9 +87,7 @@ Item {
         Item {
             Layout.fillWidth: true; Layout.fillHeight: true
             Loader {
-                anchors.centerIn: parent
-                width: Math.min(parent.width,root.small ? Style.space(300) : Style.space(470))
-                height: Math.min(parent.height,root.small ? Style.space(275) : Style.space(270))
+                anchors.fill: parent
                 sourceComponent: root.small
                     ? (root.styleName === "twin" ? twinComponent : monolithComponent)
                     : (root.styleName === "classic" ? classicComponent : solarComponent)
@@ -102,8 +100,8 @@ Item {
         id: solarComponent
         RowLayout {
             visible: root.rows.length > 0
-            spacing: Style.space(16)
-            ClockFace { visible: root.viewName === "analogue"; solar: true; rows: root.shown; colors: root.clockColors; Layout.preferredWidth: Math.min(parent.height,parent.width*.46); Layout.preferredHeight: Layout.preferredWidth }
+            spacing: Style.space(12)
+            ClockFace { visible: root.viewName === "analogue"; solar: true; rows: root.shown; colors: root.clockColors; Layout.preferredWidth: Math.min(parent.height-Style.space(4),parent.width*.42); Layout.preferredHeight: Layout.preferredWidth }
             ColumnLayout {
                 visible: root.viewName === "analogue"; Layout.fillWidth: true; spacing: Style.space(8)
                 Repeater { model: root.shown; delegate: RowLayout {
@@ -163,7 +161,7 @@ Item {
         id: monolithComponent
         ColumnLayout {
             visible: root.rows.length > 0; spacing: Style.space(8)
-            ClockFace { visible: root.viewName === "analogue"; row: root.shown[0] || ({}); Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: Math.min(parent.width*.6,parent.height*.62); Layout.preferredHeight: Layout.preferredWidth }
+            ClockFace { visible: root.viewName === "analogue"; row: root.shown[0] || ({}); Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: Math.min(parent.width*.76,parent.height*.72); Layout.preferredHeight: Layout.preferredWidth }
             Label { visible: root.viewName === "analogue"; text: root.shown.length ? root.shown[0].label + " · " + (root.shown[0].homeRelative || "Today") : ""; Layout.alignment: Qt.AlignHCenter; font.bold: true }
             Label { visible: root.viewName === "digital"; text: root.shown.length ? root.shown[0].label : ""; color: Color.accent; font.bold: true }
             Label { visible: root.viewName === "digital"; text: root.shown.length ? root.shown[0].time : ""; font.pixelSize: Style.font.heading+Style.space(24); font.bold: true; Layout.fillHeight: true; verticalAlignment: Text.AlignVCenter }
@@ -181,7 +179,7 @@ Item {
             Repeater { model: root.shown.slice(0,2); delegate: RowLayout {
                 required property var modelData; required property int index
                 Layout.fillWidth: true; Layout.fillHeight: true
-                ClockFace { visible: root.viewName === "analogue"; row: modelData; Layout.preferredWidth: Style.space(76); Layout.preferredHeight: Layout.preferredWidth }
+                ClockFace { visible: root.viewName === "analogue"; row: modelData; Layout.preferredWidth: Math.min(Style.space(86),root.height*.31); Layout.preferredHeight: Layout.preferredWidth }
                 ColumnLayout { Layout.fillWidth: true
                     Label { text: modelData.label; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
                     Label { text: root.viewName === "digital" ? modelData.time : (index===0?"Home":modelData.homeOffset || modelData.offset); font.pixelSize: root.viewName === "digital" ? Style.font.heading+Style.space(10) : Style.font.bodySmall; color: root.viewName === "digital" ? Color.foreground : Color.muted }
