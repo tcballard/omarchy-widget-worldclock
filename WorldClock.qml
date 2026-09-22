@@ -134,11 +134,11 @@ Item {
         Item {
             visible: root.rows.length > 0
             Row {
-                visible: root.viewName === "analogue"; anchors.centerIn: parent; spacing: Style.space(9)
+                visible: root.viewName === "analogue"; anchors.centerIn: parent; spacing: Style.space(root.width > Style.space(500) ? 15 : 6)
                 Repeater { model: root.shown.slice(0,4); delegate: Column {
                     required property var modelData; required property int index
-                    width: Math.min((classicArea.width-Style.space(27))/Math.max(1,Math.min(4,root.shown.length)),Style.space(105)); spacing: Style.space(5)
-                    ClockFace { anchors.horizontalCenter: parent.horizontalCenter; width: Math.min(parent.width-8,classicArea.height*.54); height: width; row: modelData }
+                    width: Math.min((classicArea.width-Style.space(root.width > Style.space(500) ? 45 : 18))/Math.max(1,Math.min(4,root.shown.length)),Style.space(120)); spacing: Style.space(7)
+                    ClockFace { anchors.horizontalCenter: parent.horizontalCenter; width: Math.min(parent.width-Style.space(4),classicArea.height*.72); height: width; row: modelData }
                     Label { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label.length>8 ? modelData.label.slice(0,7)+"…" : modelData.label; font.bold: true; font.pixelSize: Style.font.bodySmall }
                     Label { anchors.horizontalCenter: parent.horizontalCenter; text: index === 0 ? "Home" : modelData.homeOffset || modelData.offset; color: Color.muted; font.pixelSize: Style.font.bodySmall }
                 } }
