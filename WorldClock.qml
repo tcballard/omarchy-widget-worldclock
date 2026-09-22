@@ -61,37 +61,150 @@ Item {
         }
     }
     ColumnLayout {
-        visible:!root.editingCities
-        anchors.fill:parent; anchors.margins:Style.space(14); spacing:Style.space(8)
+        visible: !root.editingCities
+        anchors.fill: parent
+        anchors.margins: Style.space(root.widgetContext.sizeName === "compact" ? 16 : 20)
+        spacing: Style.space(10)
+
         RowLayout {
-            Layout.fillWidth:true
-            Label { text:"World Clock"; font.family:root.labelFamily; font.pixelSize:Style.font.title || Style.font.heading; Layout.fillWidth:true }
-            Ui.Button { text:"Edit cities";focusable:true;fontSize:Style.font.bodySmall;onClicked:root.editCities() }
-        }
-        ListView {
-            id:list
-            Layout.fillWidth:true; Layout.fillHeight:true; clip:true
-            model:root.rows; spacing:0
-            delegate:Item {
-                required property var modelData
-                width:ListView.view.width; height:Style.space(root.widgetContext.sizeName==="compact"?43:54)
-                Rectangle { anchors.bottom:parent.bottom; width:parent.width; height:1; color:Color.foreground; opacity:typeof root.appearance.separatorAlpha==="number"?Math.max(0,Math.min(1,root.appearance.separatorAlpha)):0.07 }
-                RowLayout {
-                    anchors.fill:parent; spacing:Style.space(10)
-                    Rectangle { width:Style.space(5); height:Style.space(5);radius:width/2; color:modelData.day?Color.accent:Color.muted; opacity:modelData.day?1:0.45 }
-                    ColumnLayout {
-                        Layout.fillWidth:true; spacing:Style.space(2)
-                        Label { text:modelData.label; font.family:root.labelFamily; Layout.fillWidth:true }
-                        Label { text:modelData.date+(modelData.relative?" · "+modelData.relative:""); color:modelData.valid?Color.muted:Color.urgent; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
-                    }
-                    Label { visible:root.widgetContext.sizeName==="wide"; text:modelData.offset; color:Color.muted; font.pixelSize:Style.font.bodySmall }
-                    Label { text:modelData.time; font.pixelSize:Style.font.heading; color:modelData.valid?Color.foreground:Color.urgent }
+            Layout.fillWidth: true
+            Layout.preferredHeight: Style.space(30)
+            spacing: Style.space(8)
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 0
+                Label {
+                    text: "WORLD CLOCK"
+                    font.family: root.labelFamily
+                    font.pixelSize: Style.font.bodySmall
+                    font.bold: true
+                    font.letterSpacing: 1.6
+                    color: Color.accent
+                }
+                Label {
+                    text: "Around the world"
+                    font.family: root.labelFamily
+                    font.pixelSize: Style.font.heading
+                    font.bold: true
+                    color: Color.foreground
+                    visible: root.widgetContext.sizeName !== "compact"
                 }
             }
-            Label { anchors.centerIn:parent; text:root.cities.length?"Updating…":"No cities configured"; visible:root.rows.length===0 && !root.error }
+            Ui.Button {
+                text: "Edit cities"
+                focusable: true
+                fontSize: Style.font.bodySmall
+                onClicked: root.editCities()
+            }
         }
-        Label { text:root.error; visible:text!==""; color:Color.urgent; Layout.fillWidth:true; wrapMode:Text.Wrap }
-        Label { text:root.error?"Displayed times may be stale":"24-hour time · Bright dot: daytime"; font.family:root.labelFamily;color:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true; wrapMode:Text.Wrap }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: Color.foreground
+            opacity: 0.12
+        }
+
+        ListView {
+            id: list
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            model: root.rows
+            spacing: Style.space(4)
+            delegate: Rectangle {
+                required property var modelData
+                width: ListView.view.width
+                height: Style.space(root.widgetContext.sizeName === "compact" ? 47 : 55)
+                radius: Style.space(8)
+                color: Qt.rgba(Color.foreground.r, Color.foreground.g, Color.foreground.b, index % 2 === 0 ? 0.045 : 0.018)
+                required property int index
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: Style.space(10)
+                    anchors.rightMargin: Style.space(10)
+                    spacing: Style.space(9)
+                    Rectangle {
+                        Layout.preferredWidth: Style.space(6)
+                        Layout.preferredHeight: Style.space(6)
+                        radius: width / 2
+                        color: modelData.day ? Color.accent : Color.muted
+                        opacity: modelData.day ? 1 : 0.55
+                    }
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 0
+                        Label {
+                            text: modelData.label
+                            font.family: root.labelFamily
+                            font.pixelSize: Style.font.body
+                            font.bold: true
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                        Label {
+                            text: modelData.date + (modelData.relative ? "  ·  " + modelData.relative : "")
+                            color: modelData.valid ? Color.muted : Color.urgent
+                            font.family: root.labelFamily
+                            font.pixelSize: Style.font.bodySmall
+                            elide: Text.ElideRight
+                            Layout.fillWidth: true
+                        }
+                    }
+                    Label {
+                        visible: root.widgetContext.sizeName === "wide"
+                        text: modelData.offset
+                        color: Color.muted
+                        font.family: root.labelFamily
+                        font.pixelSize: Style.font.bodySmall
+                    }
+                    Label {
+                        text: modelData.time
+                        font.family: root.labelFamily
+                        font.pixelSize: Style.font.heading + Style.space(4)
+                        font.bold: true
+                        color: modelData.valid ? Color.foreground : Color.urgent
+                    }
+                }
+            }
+            Label {
+                anchors.centerIn: parent
+                text: root.cities.length ? "Updating…" : "No cities configured"
+                visible: root.rows.length === 0 && !root.error
+            }
+        }
+        Label {
+            text: root.error
+            visible: text !== ""
+            color: Color.urgent
+            Layout.fillWidth: true
+            wrapMode: Text.Wrap
+        }
+        RowLayout {
+            Layout.fillWidth: true
+            Label {
+                text: root.error ? "Displayed times may be stale" : "LOCAL TIME · 24 HOUR"
+                font.family: root.labelFamily
+                color: Color.muted
+                font.pixelSize: Style.font.bodySmall
+                font.letterSpacing: 0.8
+                Layout.fillWidth: true
+            }
+            Rectangle {
+                width: Style.space(5)
+                height: width
+                radius: width / 2
+                color: Color.accent
+            }
+            Label {
+                text: "DAYTIME"
+                font.family: root.labelFamily
+                color: Color.muted
+                font.pixelSize: Style.font.bodySmall
+                font.letterSpacing: 0.8
+            }
+        }
     }
     CityEditor {
         id:editor;objectName:"city-editor";anchors.fill:parent;anchors.margins:Style.space(14);visible:root.editingCities
