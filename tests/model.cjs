@@ -21,3 +21,12 @@ assert.deepEqual(m.cities(null),[]);
 assert.throws(()=>m.rows('',cities,'2026-03-20'));
 assert.equal(m.rows('12:00|Fri 01 Jan|+14:00|12|2026-01-03',[cities[0]],'2026-01-01')[0].relative,'+2 days');
 console.log('PASS: DST transitions, staggered DST, half-hour offsets, rollover, invalid zones, bounded settings and partial data');
+
+const homeRows=m.rows(times('2026-09-15T23:30:00Z',['Europe/London','America/New_York','Asia/Kathmandu']),m.cities({cities:['Europe/London','America/New_York','Asia/Kathmandu']}),'2026-09-15');
+assert.equal(m.homeOffset(homeRows[1],homeRows[0]),'−5h');
+assert.equal(m.homeOffset(homeRows[2],homeRows[0]),'+4:45h');
+assert.equal(m.homeDay(homeRows[1],homeRows[0]),'−1 day');
+assert.equal(m.homeDay(homeRows[2],homeRows[0]),'');
+assert.equal(m.minuteOfDay(homeRows[0]),30);
+assert.equal(m.homeOffset(homeRows[0],null),'');
+console.log('PASS: home-relative offsets, quarter-hour zones and day rollover');

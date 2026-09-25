@@ -6,6 +6,7 @@ import "Model.js" as Model
 
 FocusScope {
     id: root
+    property bool showActions: true
     property var initial: []
     property var draft: []
     property string message: ""
@@ -45,7 +46,7 @@ FocusScope {
                     TextInput {
                         id:name;anchors.fill:parent;anchors.margins:Style.space(6);text:modelData.label;maximumLength:48;clip:true
                         color:Color.foreground;font.family:root.family;font.pixelSize:Style.font.body;selectByMouse:true
-                        onTextEdited: { root.draft[index].label=text; }
+                        onTextEdited: { var next=root.draft.slice(); next[index]=Object.assign({},next[index],{label:text}); root.draft=next; }
                         Accessible.name: "City label for "+modelData.zone
                     }
                 }
@@ -74,10 +75,11 @@ FocusScope {
         Label { text:root.message;visible:text!=="";color:Color.urgent;Layout.fillWidth:true;wrapMode:Text.Wrap }
         RowLayout {
             Layout.fillWidth:true
-            Ui.Button { text:"Cancel";focusable:true;enabled:!root.busy;onClicked:root.cancelled() }
+            Ui.Button { text:"Cancel";visible:root.showActions;focusable:true;enabled:!root.busy;onClicked:root.cancelled() }
             Item { Layout.fillWidth:true }
             Ui.Button { text:"Add ID";visible:search.text!=="";focusable:true;enabled:!root.busy;onClicked:root.add(search.text.trim()) }
-            Ui.Button { text:root.busy?"Saving…":"Save";objectName:"save-cities";focusable:true;enabled:!root.busy;onClicked:root.submitted(root.draft) }
+            Ui.Button { text:root.busy?"Saving…":"Save";visible:root.showActions;objectName:"save-cities";focusable:true;enabled:!root.busy;onClicked:root.submitted(root.draft) }
         }
     }
 }
+

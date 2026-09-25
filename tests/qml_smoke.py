@@ -20,18 +20,27 @@ import qs.Commons
 import "'''+root.as_uri()+'''" as Widget
 import "'''+(root/"Model.js").as_uri()+'''" as Model
 Window {
- width:580;height:408;visible:true;color:Color.background
+ width:800;height:280;visible:true;color:Color.background
+ function setLight(value) { Color.light=value; }
  QtObject {
-  id:context;objectName:"context";property var settings:'''+json.dumps(fixture)+''';property bool active:false;property string sizeName:"wide"
-  property var appearance:({fontFamily:"DejaVu Sans"});property bool saving:false;property string saveError:"";property bool inputRequested:false
-  property var submitted:null
-  function requestInput(value) { inputRequested=value; }
-  function saveSettings(value) { if(saving)return false;submitted=value;return true; }
+  id:context;objectName:"context";property var settings:'''+json.dumps(fixture)+''';property bool active:false
+  property var appearance:({fontFamily:"DejaVu Sans Mono"})
+  property int configureRequests:0
+  function requestConfigure() { configureRequests++; }
+  function applySettings(text) { context.settings=JSON.parse(text); }
+ }
+ QtObject {
+  id:settingsContext;objectName:"settings-context"
+  property var draftSettings:JSON.parse(JSON.stringify(context.settings))
+  property var appearance:context.appearance
+  function resetDraft(text) { draftSettings=JSON.parse(text); }
  }
  Widget.WorldClock {
   id:clock;objectName:"clock";anchors.fill:parent;widgetContext:context
-  Component.onCompleted: rows=Model.rows("12:30|Tue 15 Sep|+01:00|12|2026-09-15\\n07:30|Tue 15 Sep|-04:00|07|2026-09-15\\n06:30|Tue 15 Sep|-05:00|06|2026-09-15\\n13:30|Tue 15 Sep|+02:00|13|2026-09-15\\n20:30|Tue 15 Sep|+09:00|20|2026-09-15\\n21:30|Tue 15 Sep|+10:00|21|2026-09-15",cities,"2026-09-15")
+  function populate() { rows=Model.rows("12:30|Tue 15 Sep|+01:00|12|2026-09-15\\n07:30|Tue 15 Sep|-04:00|07|2026-09-15\\n06:30|Tue 15 Sep|-05:00|06|2026-09-15\\n13:30|Tue 15 Sep|+02:00|13|2026-09-15\\n20:30|Tue 15 Sep|+09:00|20|2026-09-15\\n21:30|Tue 15 Sep|+10:00|21|2026-09-15",cities,"2026-09-15"); }
+  Component.onCompleted:populate()
  }
+ Widget.Settings { id:settings;objectName:"settings";anchors.fill:parent;visible:false;settingsContext:settingsContext }
 }
 ''')
  app=QGuiApplication([]);engine=QQmlApplicationEngine();engine.addImportPath(tmp)
@@ -39,43 +48,56 @@ Window {
  engine.load(QUrl.fromLocalFile(str(preview)))
  assert engine.rootObjects(),"Could not load widget"
  def check():
+  from PySide6.QtTest import QTest
   window=engine.rootObjects()[0]
   clock=window.findChild(QObject,"clock")
+  settings=window.findChild(QObject,"settings")
   editor=window.findChild(QObject,"city-editor")
   context=window.findChild(QObject,"context")
+  sc=window.findChild(QObject,"settings-context")
   def call(obj,name,*args):
    assert QMetaObject.invokeMethod(obj,name,*[Q_ARG("QVariant",a) for a in args])
-  def draft():return editor.property("draft").toVariant()
-  call(clock,"editCities")
-  assert context.property("inputRequested")
-  assert len(draft())==6
-  call(editor,"add","Europe/Paris")
-  assert len(draft())==7
-  call(editor,"move",6,-1)
-  assert draft()[5]["zone"]=="Europe/Paris"
-  call(editor,"removeAt",0)
-  assert len(draft())==6
-  call(editor,"add","../bad")
-  assert len(draft())==6 and editor.property("message")
-  context.setProperty("saving",True)
-  call(clock,"saveCities",draft())
-  assert "busy" in editor.property("message")
-  context.setProperty("saving",False)
-  call(clock,"saveCities",draft())
-  assert context.property("submitted").toVariant()["cities"][4]["zone"]=="Europe/Paris"
-  call(clock,"closeEditor")
-  assert not context.property("inputRequested")
-  call(clock,"editCities")
-  assert draft()[0]["zone"]=="Europe/London", "Cancel must discard the draft"
+  def value(obj,key):return obj.property(key).toVariant()
+  def snapshot(name):
+   QTest.qWait(100)
+   assert window.grabWindow().save(str(out/(name+".png")))
   out=root/"test-results";out.mkdir(exist_ok=True)
-  app.processEvents()
-  assert window.grabWindow().save(str(out/"editor.png"))
-  call(clock,"closeEditor")
-  app.processEvents()
+  call(clock,"openSettings")
+  assert context.property("configureRequests")==1
+  assert not clock.findChild(QObject,"analogue-mode"), "Settings controls must not be on the clock"
+  original=value(context,"settings")
+  call(settings,"setMode","analogue")
+  assert value(sc,"draftSettings")["displayMode"]=="analogue"
+  assert value(context,"settings")==original, "Draft must not mutate saved settings"
+  call(editor,"add","Europe/Paris")
+  call(editor,"move",6,-1)
+  assert value(sc,"draftSettings")["cities"][5]["zone"]=="Europe/Paris"
+  call(editor,"removeAt",0)
+  assert value(sc,"draftSettings")["homeZone"]=="America/New_York"
+  before=value(editor,"draft")
+  call(editor,"add","../bad")
+  assert value(editor,"draft")==before and editor.property("message")
+  # Simulate Core discarding an editor draft; display still uses acknowledged settings.
+  call(sc,"resetDraft",json.dumps(original))
+  assert not clock.property("analogue")
+  clock.setVisible(False);settings.setVisible(True)
+  window.setWidth(520);window.setHeight(500)
+  snapshot("settings")
+  settings.setVisible(False);clock.setVisible(True)
+  for mode in ["digital","analogue"]:
+   saved=dict(original,displayMode=mode)
+   (out/"saved-settings.json").write_text(json.dumps(saved))
+   call(context,"applySettings",(out/"saved-settings.json").read_text())
+   call(clock,"populate")
+   assert clock.property("analogue")== (mode=="analogue")
+   for name,width,height in [("reference",1000,280),("small",168,168),("medium",376,168),("large",376,376)]:
+    window.setWidth(width);window.setHeight(height)
+    snapshot(mode+"-"+name)
+   call(window,"setLight",True)
+   snapshot(mode+"-light")
+   call(window,"setLight",False)
   if warnings:
    print("\n".join(warnings));app.exit(1);return
-  out=root/"test-results";out.mkdir(exist_ok=True)
-  assert engine.rootObjects()[0].grabWindow().save(str(out/"worldclock.png"))
-  print("PASS: native rows, editor add/remove/reorder, invalid ID, busy save, submitted settings, cancel and keyboard ownership")
+  print("PASS: gear-only controls, mode drafts and reload, city edits, home fallback, invalid IDs, both modes at Core content sizes, dark/light rendering")
   app.exit(0)
  QTimer.singleShot(300,check);sys.exit(app.exec())

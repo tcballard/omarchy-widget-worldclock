@@ -1,14 +1,12 @@
 # Omarchy World Clock
 
-One native desktop widget showing multiple time zones together. A compact city-and-time board inspired by Bloomberg Launchpad, hosted by [Omarchy Widget Core](https://github.com/tcballard/omarchy-widget-core).
+One native desktop widget showing multiple cities, inspired by Bloomberg Launchpad. City columns, a theme-coloured home clock, and digital or analogue time. Only a small settings gear sits above the clocks; there is no title bar, display toggle or city editor inside the widget.
 
-**Experimental 0.1.1 · Core API 1, Core 0.1.1 required for the editor.** This is a widget package with `widget.json`, not a Quattro plugin. Core owns its window, placement, theme scaling and persistent settings.
+**Experimental 0.1.2 · requires Widget Core v0.0.2 / API 2.** This is a desktop widget package, not a shell plugin. Core owns the window, fixed sizes, theme, sandbox and persistent settings. Live Quickshell/Hyprland acceptance remains outstanding.
 
-Default cities: London, New York, Chicago, Amsterdam, Tokyo and Sydney. Every row shows 24-hour local time and date. Date differences are relative to your computer's local date. Wide size also shows UTC offsets. Bright dots indicate 07:00–18:59 local time; they are an approximate daytime cue, not sunrise/sunset or market-open status. Scroll to see additional cities in smaller sizes.
+## Install or update
 
-## Install
-
-Install and enable Widget Core first, then run:
+Install [Widget Core](https://github.com/tcballard/omarchy-widget-core) v0.0.2 first, then:
 
 ```bash
 git clone https://github.com/tcballard/omarchy-widget-worldclock.git
@@ -16,65 +14,45 @@ cd omarchy-widget-worldclock
 bash install-local
 ```
 
-This copies the package, adds its single desktop placement and refreshes Core. It refuses to overwrite an installed snapshot. Requires Omarchy Quattro with Core 0.1.0, Bash, GNU coreutils and the system `tzdata` package. No network, account, API key or compiled widget helper is required.
+For an existing installation, use `bash install-local --update`. The installer stages runtime files only, then asks Core to validate and update the immutable package. Core preserves existing cities, placement and instance settings and retains the previous version for rollback. It does not hide/show all widgets or modify the registry directly. Finish unsaved settings edits before updating.
 
-Open the manager to hide or arrange the clock:
+Requires Bash, GNU coreutils and system tzdata. No account, network or API key is needed. Use `omarchy-widget manage` for placement, size and monitor controls.
 
-```bash
-omarchy-shell io.github.tcballard.widget-core manage
-```
+## Settings
 
-Use Core's Arrange controls to move the card, select compact/standard/wide or switch monitors.
+Click the **gear in the top-right** to open Core's separate settings window:
 
-## Choose cities
+- Choose **Digital** or **Analogue** for all cities in this widget instance.
+- Choose the home city for the accent, timezone offsets and relative dates.
+- Add, rename, reorder or remove cities. Search the catalogue or enter an IANA timezone ID. Up to twelve cities are supported.
+- Core's **Save** commits the complete draft; **Cancel** discards it. Conflicts and failed saves remain in Core's settings window.
 
-Click **Edit cities** in the card. Search the common-city catalogue and click a
-timezone to add it, or enter an IANA ID and choose **Add ID**. Edit labels inline,
-use the arrows to reorder and × to remove. **Save** persists the list; **Cancel**
-discards edits. At most twelve cities are supported. Custom IDs not present in
-the local timezone database will show an error in their row after saving.
+Existing settings default to digital with London as home when present, otherwise the first valid clock. The editor preserves unrelated settings such as appearance. Removing the selected home city chooses the first remaining city. Unknown timezone IDs show an error in their clock.
 
-The editor preserves other settings, including `appearance`. Core's softer
-frame and theme-owned appearance options are documented in
-[Widget appearance](https://github.com/tcballard/omarchy-widget-core/blob/main/docs/widget-appearance.md).
+## Clock layout
 
-### Upgrade from 0.1.0
+Digital mode shows 24-hour times. Analogue mode uses hour and minute hands, with a Day/Night label to distinguish the halves of the day. The hour hand includes minute progress. Both modes use the same sampled instant and update once per minute while active; there is no continuously animated second hand.
 
-First update Core from its checkout with `git pull --ff-only` and
-`bash install-local --update`. Then run the same two commands from this widget's
-checkout. The updater keeps cities and placement and retains the old package
-in a backup directory printed by the command. It temporarily hides all Core
-widgets and shows them after replacement. Finish any unsaved editor work first.
+The home city is labelled **Home** and takes the active theme's accent. Other clocks show offsets from home, including half-hour and quarter-hour differences. Day differences are also relative to home, rather than the computer's timezone.
 
-### Command-line configuration
+City columns scroll horizontally when they exceed the available width. Core's small, medium and large families stay unchanged. Compact heights omit the date and day strip to retain legible clocks. The wide reference is a design direction, not a new Core size.
 
-Settings belong to this single widget. Keep between one and twelve cities, in display order, using IANA timezone IDs. Custom labels are supported. Configure through Core:
+Day/Night and the subtle day strip use **07:00–18:59 local time**, an approximate daytime cue, not sunrise/sunset or market hours. Colours and fonts come from Core's active theme. Core can still show its own arrangement controls while arranging widgets.
 
-```bash
-"$HOME/.config/omarchy/plugins/io.github.tcballard.widget-core/bin/omarchy-widget" configure io.github.tcballard.worldclock '{"cities":[{"label":"London","zone":"Europe/London"},{"label":"New York","zone":"America/New_York"},{"label":"Tokyo","zone":"Asia/Tokyo"}]}'
-omarchy-shell io.github.tcballard.widget-core refresh
-```
+## Reliability and verification
 
-A city can also be a timezone string such as `"Europe/Amsterdam"`. Core replaces the entire settings object. An empty list shows an empty state; entries after the first twelve are ignored. Invalid timezones display an error in their own row.
-
-## How it works
-
-All rows are sampled at one UTC instant, using the machine's timezone database and GNU `date`. Daylight saving and unusual offsets follow that database. A fixed Bash script receives argv values without evaluating user shell text. It validates zone names, performs at most twelve conversions and produces a bounded result. Core API 1 copies package files without executable bits, so Quickshell invokes this script explicitly through Bash.
-
-The widget updates on minute changes while active. Core unloads it when hidden or its monitor's workspace is fullscreen. Requests have a timeout, cannot overlap, and old settings generations cannot overwrite newer ones. Failed updates retain the previous rows with a stale-data message and retry at the next minute. Refreshing Core reloads the widget immediately. Times depend on the accuracy of your system clock and installed tzdata.
-
-## Verify
+A bounded Bash helper samples every city at one UTC instant using GNU date and system tzdata. It validates timezone names and never evaluates them as shell code. Requests cannot overlap, have a deadline and discard obsolete settings generations. Failed updates show a stale-time warning and retry on the next minute. Accurate system time and current tzdata remain necessary.
 
 ```bash
 node tests/model.cjs
+python3 tests/update.py
 python3 -m pip install 'PySide6==6.11.2'
 python3 tests/qml_smoke.py
+bash -n install-local scripts/times
 ```
 
-Model tests exercise real timezone conversion, UK DST transitions, staggered US/UK DST, half-hour offsets, date rollover, invalid zones and settings bounds. The native Qt test loads the production widget with explicit theme and process fixtures. It does not run the real Quickshell process or Wayland compositor.
+Timezone tests use the real conversion helper, including DST boundaries, fractional offsets and home-relative date rollover. Qt tests render production QML in both modes at all Core content sizes and light/dark palettes. They exercise the gear callback, settings drafts, city operations and settings reload. The installer test checks delegation, staging and refusal after failed validation.
 
-Before calling this desktop-verified: install it through Core on Omarchy, check all sizes, configure/reorder cities, change theme, restart the shell, and confirm hide/fullscreen stops updates and saved settings survive. No live Omarchy test has been performed in this build environment.
-
-To replace this widget's snapshot, use `bash install-local --update` as described above. It preserves the separate layout/settings file and retains a backup of the old package. Core's generic install command still refuses replacement.
+Qt process/theme fixtures do not establish live Quickshell, Wayland, Core save acknowledgement or compositor compatibility. On Omarchy, verify opening the settings window, Save/Cancel, mode persistence after restart, scrolling all cities, theme changes and package update/rollback before calling this desktop-verified.
 
 MIT licensed.
