@@ -1,8 +1,8 @@
 # Omarchy World Clock
 
-One native desktop widget showing multiple cities, inspired by Bloomberg Launchpad. City columns, a theme-coloured home clock, and digital or analogue time. Only a small settings gear sits above the clocks; there is no title bar, display toggle or city editor inside the widget.
+One native desktop widget showing multiple cities, inspired by Bloomberg Launchpad. City columns, a theme-coloured home clock, and digital or analogue time. Only Core’s shared settings gear sits above the clocks; there is no title bar, display toggle or city editor inside the widget.
 
-**Experimental 0.1.2 · requires Widget Core v0.0.2 / API 2.** This is a desktop widget package, not a shell plugin. Core owns the window, fixed sizes, theme, sandbox and persistent settings. Live Quickshell/Hyprland acceptance remains outstanding.
+**Experimental 0.1.2 · requires Widget Core API 3.** This is a desktop widget package, not a shell plugin. Core owns the window, fixed sizes, theme, sandbox and persistent settings. Live Quickshell/Hyprland acceptance remains outstanding.
 
 ## Install or update
 
@@ -60,7 +60,7 @@ MIT licensed.
 
 ### Widget Core implementation stack
 
-The API 2 integration is the first milestone of the Widget Core implementation
+The original API 2 integration was the first milestone of the Widget Core implementation
 stack. Embedded city settings forward Escape to Core's Cancel handling; the
 standalone editor retains its own Cancel signal. `tests/qml_smoke.py` checks this
 keyboard propagation alongside the existing rendering and draft checks.
@@ -71,3 +71,5 @@ Rust registry. It covers Save/Cancel, stale revisions, independent cities,
 workspace preservation and fresh-process disk reopening. This remains portable
 Qt evidence: live Quickshell settings windows, reboot, scaling and monitor
 acceptance are outstanding.
+
+This revision requires **Core API 3** and uses its shared settings gear. Older API 2 hosts reject installation. The declared helper commands are bash, date and timeout. Qt 6.11.2 component tests are separate from live Omarchy acceptance.
