@@ -27,6 +27,19 @@ ColumnLayout {
         Ui.Button { objectName:"digital-mode"; text:"Digital"; focusable:true; selected:root.settingsContext.draftSettings.displayMode !== "analogue"; onClicked:root.setMode("digital") }
         Ui.Button { objectName:"analogue-mode"; text:"Analogue"; focusable:true; selected:root.settingsContext.draftSettings.displayMode === "analogue"; onClicked:root.setMode("analogue") }
     }
+    Label { text:"Clock design · Solar and Classic for medium/large; Monolith and Twin for small"; color:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true; wrapMode:Text.Wrap }
+    Flow {
+        Layout.fillWidth:true; spacing:Style.space(4)
+        Repeater {
+            model:["solar","classic","monolith","twin"]
+            Ui.Button {
+                required property string modelData
+                text:modelData.charAt(0).toUpperCase()+modelData.slice(1)
+                focusable:true; selected:root.settingsContext.draftSettings.style === modelData
+                onClicked:root.change("style",modelData)
+            }
+        }
+    }
     Label { text:"Home city · offsets and dates are relative to this clock"; color:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true; wrapMode:Text.Wrap }
     Flickable {
         Layout.fillWidth:true; Layout.preferredHeight:Style.space(38)

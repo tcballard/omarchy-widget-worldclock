@@ -53,92 +53,111 @@ Item {
     readonly property bool analogue: widgetContext.settings.displayMode === "analogue"
     readonly property bool compact: height < Style.space(240)
     readonly property var home: rows.find(function(r) { return r.zone === (root.widgetContext.settings.homeZone || "Europe/London") && r.valid; }) || rows.find(function(r) { return r.valid; }) || null
+    readonly property bool small: widgetContext.family === "small"
+    readonly property string styleName: (widgetContext.settings.style || (small ? "monolith" : "solar"))
+    readonly property string viewName: analogue ? "analogue" : "digital"
+    readonly property var shown: rows.filter(function(r) { return r.valid; }).slice(0,small ? 4 : 5)
+    readonly property var clockColors: [Color.accent, "#40c8e0", "#8b82e8", "#70cb86", "#ef819a"]
     ColumnLayout {
-        anchors.fill: parent
-        anchors.margins: Style.space(4)
-        anchors.topMargin: Style.space(4)
-        spacing: Style.space(root.compact ? 3 : 10)
-        ListView {
-            id:list
-            objectName:"city-strip"
+        anchors.fill:parent; anchors.margins:Style.space(small ? 8 : 14); spacing:Style.space(8)
+        Label { text:small ? "CLOCK" : "WORLD CLOCK"; font.family:root.labelFamily; font.bold:true; font.letterSpacing:1.4; color:Color.accent; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
+        Rectangle { Layout.fillWidth:true; Layout.preferredHeight:1; color:Color.foreground; opacity:.12 }
+        Item {
             Layout.fillWidth:true; Layout.fillHeight:true
-            orientation:ListView.Horizontal
-            clip:true
-            boundsBehavior:Flickable.StopAtBounds
-            model:root.rows
-            activeFocusOnTab:true
-            Keys.onRightPressed:incrementCurrentIndex()
-            Keys.onLeftPressed:decrementCurrentIndex()
-            highlightRangeMode:ListView.ApplyRange
-            delegate:Item {
-                id:city
-                required property var modelData
-                readonly property bool isHome:root.home !== null && root.home.zone === modelData.zone
-                readonly property color ink:isHome ? Color.accent : Color.foreground
-                width:list.width / Math.max(1,Math.floor(list.width/Style.space(155)))
-                height:list.height
-                Rectangle { anchors.right:parent.right; height:parent.height; width:1; color:Color.muted; opacity:0.3 }
-                ColumnLayout {
-                    anchors.fill:parent; anchors.leftMargin:Style.space(10); anchors.rightMargin:Style.space(10)
-                    spacing:Style.space(root.compact ? 2 : 8)
-                    Label { text:city.modelData.label.toUpperCase(); font.family:root.labelFamily; font.letterSpacing:1; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
-                    Item {
-                        Layout.fillWidth:true; Layout.fillHeight:true
-                        Layout.minimumHeight:Style.space(root.analogue ? 48 : 30)
-                        Label {
-                            anchors.centerIn:parent; width:parent.width; horizontalAlignment:Text.AlignHCenter
-                            visible:!root.analogue || !city.modelData.valid
-                            text:city.modelData.time; color:city.ink; font.family:root.labelFamily
-                            font.pixelSize:Math.min(parent.width*0.28,Style.space(root.compact ? 34 : 56))
-                        }
-                        Canvas {
-                            id:dial
-                            visible:root.analogue && city.modelData.valid
-                            anchors.centerIn:parent
-                            width:Math.min(parent.width,parent.height,Style.space(140)); height:width
-                            property string clockTime:city.modelData.time
-                            property color ink:city.ink
-                            property color muted:Color.muted
-                            onClockTimeChanged:requestPaint()
-                            onInkChanged:requestPaint()
-                            onMutedChanged:requestPaint()
-                            onWidthChanged:requestPaint()
-                            onVisibleChanged:if(visible)requestPaint()
-                            onPaint: {
-                                var ctx=getContext("2d"), r=width/2-2;
-                                if(r<=0)return;
-                                ctx.reset();ctx.translate(width/2,height/2);
-                                ctx.strokeStyle=muted;ctx.lineWidth=1;
-                                ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
-                                for(var i=0;i<12;i++) {
-                                    var a=i*Math.PI/6;
-                                    ctx.beginPath();ctx.moveTo(Math.sin(a)*r*.85,-Math.cos(a)*r*.85);
-                                    ctx.lineTo(Math.sin(a)*r*.96,-Math.cos(a)*r*.96);ctx.stroke();
-                                }
-                                var parts=clockTime.split(":"), h=Number(parts[0]), m=Number(parts[1]);
-                                function hand(angle,length,thickness) {
-                                    ctx.strokeStyle=ink;ctx.lineWidth=thickness;ctx.lineCap="round";
-                                    ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.sin(angle)*r*length,-Math.cos(angle)*r*length);ctx.stroke();
-                                }
-                                hand((h%12+m/60)*Math.PI/6,.52,3);
-                                hand(m*Math.PI/30,.78,2);
-                                ctx.fillStyle=ink;ctx.beginPath();ctx.arc(0,0,2.5,0,Math.PI*2);ctx.fill();
-                            }
-                        }
-                    }
-                    Label { text:!city.modelData.valid ? "Unknown timezone" : (city.isHome ? "Home" : Model.homeOffset(city.modelData,root.home)) + " · " + (city.modelData.day ? "Day" : "Night"); color:city.isHome?Color.accent:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
-                    Label { visible:!root.compact; text:Model.homeDay(city.modelData,root.home) || city.modelData.date; color:Color.muted; font.pixelSize:Style.font.bodySmall; Layout.fillWidth:true }
-                    Rectangle {
-                        visible:!root.compact && city.modelData.valid
-                        Layout.fillWidth:true; height:Style.space(5); color:Qt.rgba(Color.muted.r,Color.muted.g,Color.muted.b,.25)
-                        Rectangle { x:parent.width*7/24; width:parent.width*12/24; height:parent.height; color:Color.accent; opacity:.35 }
-                        Rectangle { x:Math.max(0,Math.min(parent.width-width,parent.width*Model.minuteOfDay(city.modelData)/1440)); width:2; height:parent.height+4; anchors.verticalCenter:parent.verticalCenter; color:city.ink }
-                    }
-                }
-            }
-            Label { anchors.centerIn:parent; text:root.cities.length?"Updating…":"No cities configured"; visible:root.rows.length===0 && !root.error }
+            Loader { anchors.fill:parent; sourceComponent:root.small ? (root.styleName==="twin" ? twinComponent : monolithComponent) : (root.styleName==="classic" ? classicComponent : solarComponent) }
+            Label { anchors.centerIn:parent; text:root.cities.length ? "Updating…" : "No cities configured"; visible:root.rows.length===0 && !root.error }
         }
         Label { text:root.error; visible:text!==""; color:Color.urgent; Layout.fillWidth:true; wrapMode:Text.Wrap; font.pixelSize:Style.font.bodySmall }
     }
-
+    Component {
+        id: solarComponent
+        RowLayout {
+            visible: root.rows.length > 0
+            spacing: Style.space(12)
+            ClockFace { visible: root.viewName === "analogue"; solar: true; rows: root.shown; colors: root.clockColors; Layout.preferredWidth: Math.min(parent.height-Style.space(4),parent.width*.42); Layout.preferredHeight: Layout.preferredWidth }
+            ColumnLayout {
+                visible: root.viewName === "analogue"; Layout.fillWidth: true; spacing: Style.space(8)
+                Repeater { model: root.shown; delegate: RowLayout {
+                    required property var modelData; required property int index
+                    Layout.fillWidth: true; spacing: Style.space(7)
+                    Rectangle { width: 8; height: 8; radius: 4; color: root.clockColors[index] }
+                    Label { text: modelData.label; elide: Text.ElideRight; Layout.fillWidth: true }
+                    Label { text: modelData.time; color: Color.muted; font.family: root.labelFamily }
+                } }
+            }
+            ColumnLayout {
+                visible: root.viewName === "digital"; Layout.fillWidth: true; spacing: Style.space(8)
+                Repeater { model: root.shown; delegate: ColumnLayout {
+                    id: digitalCity
+                    required property var modelData; required property int index
+                    Layout.fillWidth: true; spacing: 3
+                    RowLayout { Layout.fillWidth: true; Label { text: modelData.label; Layout.fillWidth: true } Label { text: modelData.time; font.bold: true } }
+                    Row { Layout.fillWidth: true; spacing: 1; Repeater { model: 24; delegate: Rectangle {
+                        required property int index
+                        width: Math.max(2,(parent.width-23)/24); height: Style.space(12); radius: 2
+                        color: index>=8 && index<18 ? root.clockColors[digitalCity.index] : Color.foreground
+                        opacity: index>=8 && index<18 ? .55 : (index>=6 && index<18 ? .1 : .22)
+                    } } }
+                } }
+            }
+        }
+    }
+    Component {
+        id: classicComponent
+        Item {
+            visible: root.rows.length > 0
+            Row {
+                visible: root.viewName === "analogue"; anchors.centerIn: parent; spacing: Style.space(root.width > Style.space(500) ? 15 : 6)
+                Repeater { model: root.shown.slice(0,4); delegate: Column {
+                    required property var modelData; required property int index
+                    width: Math.min((classicArea.width-Style.space(root.width > Style.space(500) ? 45 : 18))/Math.max(1,Math.min(4,root.shown.length)),Style.space(120)); spacing: Style.space(7)
+                    ClockFace { anchors.horizontalCenter: parent.horizontalCenter; width: Math.min(parent.width-Style.space(4),classicArea.height*.72); height: width; row: modelData }
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label.length>8 ? modelData.label.slice(0,7)+"…" : modelData.label; font.bold: true; font.pixelSize: Style.font.bodySmall }
+                    Label { anchors.horizontalCenter: parent.horizontalCenter; text: index === 0 ? "Home" : Model.homeOffset(modelData,root.home) || modelData.offset; color: Color.muted; font.pixelSize: Style.font.bodySmall }
+                } }
+            }
+            Grid {
+                visible: root.viewName === "digital"; anchors.centerIn: parent; columns: 2; rowSpacing: Style.space(14); columnSpacing: Style.space(20)
+                Repeater { model: root.shown.slice(0,4); delegate: Column {
+                    required property var modelData; required property int index
+                    width: (classicArea.width-Style.space(20))/2; spacing: 2
+                    Label { text: (modelData.day ? "☀ " : "☾ ")+modelData.label; color: Color.muted; elide: Text.ElideRight; width: parent.width }
+                    Label { text: modelData.time; font.pixelSize: Style.font.heading+Style.space(10); font.bold: true }
+                    Label { text: (Model.homeDay(modelData,root.home) || "Today")+" · "+(index===0?"Home":Model.homeOffset(modelData,root.home) || modelData.offset); color: Color.muted; font.pixelSize: Style.font.bodySmall }
+                } }
+            }
+            property alias classicArea: classicArea
+            Item { id: classicArea; anchors.fill: parent; z: -1 }
+        }
+    }
+    Component {
+        id: monolithComponent
+        ColumnLayout {
+            visible: root.rows.length > 0; spacing: Style.space(8)
+            ClockFace { visible: root.viewName === "analogue"; row: root.shown[0] || ({}); Layout.alignment: Qt.AlignHCenter; Layout.preferredWidth: Math.min(parent.width*.76,parent.height*.72); Layout.preferredHeight: Layout.preferredWidth }
+            Label { visible: root.viewName === "analogue"; text: root.shown.length ? root.shown[0].label + " · " + (Model.homeDay(root.shown[0],root.home) || "Today") : ""; Layout.alignment: Qt.AlignHCenter; font.bold: true }
+            Label { visible: root.viewName === "digital"; text: root.shown.length ? root.shown[0].label : ""; color: Color.accent; font.bold: true }
+            Label { visible: root.viewName === "digital"; text: root.shown.length ? root.shown[0].time : ""; font.pixelSize: Style.font.heading+Style.space(24); font.bold: true; Layout.fillHeight: true; verticalAlignment: Text.AlignVCenter }
+            Repeater { model: root.viewName === "digital" ? root.shown.slice(1,4) : []; delegate: RowLayout {
+                required property var modelData; Layout.fillWidth: true
+                Label { text: modelData.label; color: Color.muted; Layout.fillWidth: true }
+                Label { text: modelData.time; color: Color.muted }
+            } }
+        }
+    }
+    Component {
+        id: twinComponent
+        ColumnLayout {
+            visible: root.rows.length > 0; spacing: Style.space(4)
+            Repeater { model: root.shown.slice(0,2); delegate: RowLayout {
+                required property var modelData; required property int index
+                Layout.fillWidth: true; Layout.fillHeight: true
+                ClockFace { visible: root.viewName === "analogue"; row: modelData; Layout.preferredWidth: Math.min(Style.space(86),root.height*.31); Layout.preferredHeight: Layout.preferredWidth }
+                ColumnLayout { Layout.fillWidth: true
+                    Label { text: modelData.label; font.bold: true; elide: Text.ElideRight; Layout.fillWidth: true }
+                    Label { text: root.viewName === "digital" ? modelData.time : (index===0?"Home":Model.homeOffset(modelData,root.home) || modelData.offset); font.pixelSize: root.viewName === "digital" ? Style.font.heading+Style.space(10) : Style.font.bodySmall; color: root.viewName === "digital" ? Color.foreground : Color.muted }
+                }
+            } }
+        }
+    }
 }
