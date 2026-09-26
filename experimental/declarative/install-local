@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+core="$HOME/.config/omarchy/plugins/io.github.tcballard.widget-core/bin/omarchy-widget"
+[[ -x "$core" ]] || { echo 'Install Widget Core with declarative-v1 support first.' >&2; exit 1; }
+[[ $# -eq 1 && "$1" == --update ]] || { echo 'Usage: bash experimental/declarative/install-local --update' >&2; exit 1; }
+# Explicit update preserves the installed instance and its rollback checkpoint.
+stage=$(mktemp -d)
+trap 'rm -rf -- "$stage"' EXIT
+cp -- "$root/widget.json" "$root/../../LICENSE" "$stage/"
+"$core" validate "$stage" >/dev/null
+"$core" update "$stage"

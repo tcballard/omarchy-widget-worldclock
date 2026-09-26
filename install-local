@@ -2,12 +2,13 @@
 set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
 core="$HOME/.config/omarchy/plugins/io.github.tcballard.widget-core/bin/omarchy-widget"
-[[ -x "$core" ]] || { echo 'Install Widget Core with declarative-v1 support first.' >&2; exit 1; }
+[[ -x "$core" ]] || { echo 'Install Widget Core v0.0.2 (API 3) first.' >&2; exit 1; }
 [[ $# -eq 0 || ( $# -eq 1 && "$1" == --update ) ]] || { echo 'Usage: bash install-local [--update]' >&2; exit 1; }
 # Core validates, copies immutable versions and preserves instance settings.
 stage=$(mktemp -d)
 trap 'rm -rf -- "$stage"' EXIT
-cp -- "$root/widget.json" "$root/LICENSE" "$stage/"
+cp -- "$root/widget.json" "$root/WorldClock.qml" "$root/Settings.qml" "$root/CityEditor.qml" "$root/Label.qml" "$root/Model.js" "$root/LICENSE" "$stage/"
+cp -R -- "$root/scripts" "$stage/"
 "$core" validate "$stage" >/dev/null
 if [[ "${1:-}" == --update ]]; then
   "$core" update "$stage"

@@ -16,8 +16,10 @@ jobs:
       - run: sudo apt-get update
       - run: sudo apt-get install -y libegl1 libopengl0 tzdata
       - run: pip install PySide6==6.11.2
+      - run: node tests/model.cjs
       - run: python3 tests/update.py
-      - run: bash -n install-local
+      - run: python3 tests/qml_smoke.py
+      - run: bash -n install-local scripts/times experimental/declarative/install-local
       - uses: actions/checkout@v4
         with:
           repository: tcballard/omarchy-widget-core
@@ -27,10 +29,11 @@ jobs:
       - uses: dtolnay/rust-toolchain@1.98.1
       - run: cargo build --locked --manifest-path test-results/core/Cargo.toml
       - run: |
-          mkdir -p /tmp/worldclock-package
-          cp widget.json LICENSE /tmp/worldclock-package/
-          test-results/core/target/debug/omarchy-widget validate /tmp/worldclock-package
-          cp widget.json test-results/core/examples/declarative-clock/widget.json
-      - run: python3 test-results/core/sdk/render_previews.py test-results/declarative-previews --package .
+          mkdir -p /tmp/worldclock-declarative
+          cp experimental/declarative/widget.json LICENSE /tmp/worldclock-declarative/
+          test-results/core/target/debug/omarchy-widget validate /tmp/worldclock-declarative
+          cp experimental/declarative/widget.json test-results/core/examples/declarative-clock/widget.json
+      - run: python3 test-results/core/sdk/render_previews.py test-results/declarative-previews --package experimental/declarative
       - run: python3 test-results/core/tests/declarative.py test-results/core/target/debug/omarchy-widget
       - run: python3 test-results/core/tests/declarative_controller.py test-results/core/target/debug/omarchy-widget
+      - run: python3 tests/declarative_update.py
