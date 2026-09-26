@@ -4,6 +4,8 @@ One native desktop widget showing multiple cities, inspired by Bloomberg Launchp
 
 **Experimental 0.1.2 · requires Widget Core API 3.** This is a desktop widget package, not a shell plugin. Core owns the window, fixed sizes, theme, sandbox and persistent settings. Live Quickshell/Hyprland acceptance remains outstanding.
 
+The experimental [shared-renderer variant](experimental/declarative/README.md) is available for opt-in evaluation; it does not replace the four QML clock designs.
+
 ## Install or update
 
 Install [Widget Core](https://github.com/tcballard/omarchy-widget-core) v0.0.2 first, then:

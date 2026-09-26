@@ -19,4 +19,21 @@ jobs:
       - run: node tests/model.cjs
       - run: python3 tests/update.py
       - run: python3 tests/qml_smoke.py
-      - run: bash -n install-local scripts/times
+      - run: bash -n install-local scripts/times experimental/declarative/install-local
+      - uses: actions/checkout@v4
+        with:
+          repository: tcballard/omarchy-widget-core
+          ref: ba37e8c2fc19752420aea48bb97a116e250e4a69
+          path: test-results/core
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@1.98.1
+      - run: cargo build --locked --manifest-path test-results/core/Cargo.toml
+      - run: |
+          mkdir -p /tmp/worldclock-declarative
+          cp experimental/declarative/widget.json LICENSE /tmp/worldclock-declarative/
+          test-results/core/target/debug/omarchy-widget validate /tmp/worldclock-declarative
+          cp experimental/declarative/widget.json test-results/core/examples/declarative-clock/widget.json
+      - run: python3 test-results/core/sdk/render_previews.py test-results/declarative-previews --package experimental/declarative
+      - run: python3 test-results/core/tests/declarative.py test-results/core/target/debug/omarchy-widget
+      - run: python3 test-results/core/tests/declarative_controller.py test-results/core/target/debug/omarchy-widget
+      - run: python3 tests/declarative_update.py
