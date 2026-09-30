@@ -7,7 +7,7 @@ with tempfile.TemporaryDirectory() as directory:
  core=home/'.config/omarchy/plugins/io.github.tcballard.widget-core/bin/omarchy-widget'
  core.parent.mkdir(parents=True)
  core.write_text('''#!/usr/bin/env python3
-import json,os,sys
+import json,os,sys,subprocess
 from pathlib import Path
 with open(Path(os.environ['HOME'])/'calls','a') as f:f.write(json.dumps(sys.argv[1:])+'\\n')
 if sys.argv[1] in ['validate','update','install']:
@@ -16,9 +16,11 @@ if sys.argv[1] in ['validate','update','install']:
  assert (p/'scripts/times').is_file()
  assert not (p/'test-results').exists() and not (p/'.git').exists()
 if os.environ.get('FAIL_VALIDATE') and sys.argv[1]=='validate':sys.exit(1)
+if sys.argv[1] in ['install','update']:
+ subprocess.run([sys.executable,os.environ['CLOCK_QML_TEST']],env=dict(os.environ,WIDGET_TEST_PACKAGE=str(p)),check=True)
 ''');core.chmod(0o755)
  state=home/'state.json';saved='{"cities":["Europe/Paris"],"displayMode":"analogue","x":73,"enabled":false}';state.write_text(saved)
- env=dict(os.environ,HOME=str(home))
+ env=dict(os.environ,HOME=str(home),CLOCK_QML_TEST=str(root/"tests/qml_smoke.py"))
  for args,expected in [([],['validate','install','add']),(['--update'],['validate','update'])]:
   log=home/'calls';log.unlink(missing_ok=True)
   subprocess.run(['bash',str(root/'install-local'),*args],env=env,check=True)
