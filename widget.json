@@ -4,7 +4,7 @@
   "coreApi": 3,
   "id": "io.github.tcballard.worldclock",
   "name": "World Clock",
-  "version": "0.1.2",
+  "version": "0.0.3",
   "entryPoint": "WorldClock.qml",
   "defaults": {
     "cities": [

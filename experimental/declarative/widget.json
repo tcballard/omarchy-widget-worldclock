@@ -4,7 +4,7 @@
   "coreApi": 3,
   "id": "io.github.tcballard.worldclock",
   "name": "World Clock",
-  "version": "0.2.0",
+  "version": "0.0.3",
   "renderer": "declarative",
   "requires": [
     "declarative-v1",
