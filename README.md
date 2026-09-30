@@ -2,13 +2,15 @@
 
 One native desktop widget showing multiple cities, inspired by Bloomberg Launchpad. City columns, a theme-coloured home clock, and digital or analogue time. Only Core’s shared settings gear sits above the clocks; there is no title bar, display toggle or city editor inside the widget.
 
-**Experimental 0.1.2 · requires Widget Core API 3.** This is a desktop widget package, not a shell plugin. Core owns the window, fixed sizes, theme, sandbox and persistent settings. Live Quickshell/Hyprland acceptance remains outstanding.
+**Experimental 0.0.3 · requires Widget Core API 3.** This is a desktop widget package, not a shell plugin. Core owns the window, fixed sizes, theme, sandbox and persistent settings. Live Quickshell/Hyprland acceptance remains outstanding.
 
 The experimental [shared-renderer variant](experimental/declarative/README.md) is available for opt-in evaluation; it does not replace the four QML clock designs.
 
+This release aligns World Clock with Core’s 0.0.x preview numbering. Updating from the earlier 0.1.2 QML or 0.2.0 experimental package preserves settings through Core’s staged update path.
+
 ## Install or update
 
-Install [Widget Core](https://github.com/tcballard/omarchy-widget-core) v0.0.2 first, then:
+Install [Widget Core](https://github.com/tcballard/omarchy-widget-core) v0.0.3 first, then:
 
 ```bash
 git clone https://github.com/tcballard/omarchy-widget-worldclock.git
