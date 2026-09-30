@@ -7,23 +7,24 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuick import QQuickWindow
 import PySide6
 root=Path(__file__).resolve().parents[1]
-for p in root.glob("*.qml"):
+package=Path(os.environ.get("WIDGET_TEST_PACKAGE",str(root))).resolve()
+for p in package.glob("*.qml"):
  subprocess.run([str(Path(PySide6.__file__).parent/"qmlformat"),str(p)],check=True,stdout=subprocess.DEVNULL)
 stubs={'qs/Ui/Button.qml': 'import QtQuick\nimport qs.Commons\nRectangle {\n id:root\n property string text:""\n property string tooltipText:""\n property bool selected:false\n property bool focusable:false\n property real fontSize:Style.font.body\n property real horizontalPadding:Style.space(9)\n signal clicked()\n implicitWidth:label.implicitWidth+horizontalPadding*2\n implicitHeight:label.implicitHeight+Style.space(14)\n color:selected?Qt.rgba(Color.accent.r,Color.accent.g,Color.accent.b,.12):"transparent"\n border.width:activeFocus?1:0;border.color:Color.accent\n activeFocusOnTab:focusable\n Keys.onReturnPressed:clicked()\n Keys.onSpacePressed:clicked()\n Text {id:label;anchors.centerIn:parent;textFormat:Text.PlainText;text:root.text;color:root.selected?Color.accent:Color.foreground;font.family:Style.font.family;font.pixelSize:root.fontSize}\n MouseArea {anchors.fill:parent;onClicked:{if(root.focusable)root.forceActiveFocus();root.clicked()}}\n}\n', 'qs/Ui/qmldir': 'module qs.Ui\nButton 1.0 Button.qml\n', 'qs/Commons/Style.qml': 'pragma Singleton\nimport QtQuick\nQtObject {\n property real scale:1\n property int cornerRadius:0\n function spaceReal(n){return n*scale}\n function space(n){return n*scale}\n property QtObject font:QtObject {\n  property string family:"DejaVu Sans Mono"\n  property real body:12*Style.scale\n  property real bodySmall:10*Style.scale\n  property real heading:16*Style.scale\n }\n}\n', 'qs/Commons/Color.qml': 'pragma Singleton\nimport QtQuick\nQtObject {\n property bool light:false\n property color foreground:light?"#263022":"#e4e8df"\n property color background:light?"#f1f0e8":"#171c1a"\n property color accent:light?"#526c36":"#b3cb92"\n property color muted:light?"#68715e":"#8a9588"\n property color urgent:light?"#9c3e30":"#e5a085"\n}\n', 'qs/Commons/qmldir': 'module qs.Commons\nsingleton Color 1.0 Color.qml\nsingleton Style 1.0 Style.qml\n', 'Quickshell/Io/Process.qml': 'import QtQuick\nQtObject {\n property var command:[]\n property bool running:false\n property QtObject stdout:null\n signal exited(int code,int status)\n}\n', 'Quickshell/Io/StdioCollector.qml': 'import QtQuick\nQtObject {property bool waitForEnd:true;property string text:""}\n', 'Quickshell/Io/IpcHandler.qml': 'import QtQuick\nQtObject {property string target:""}\n', 'Quickshell/Io/qmldir': 'module Quickshell.Io\nProcess 1.0 Process.qml\nStdioCollector 1.0 StdioCollector.qml\nIpcHandler 1.0 IpcHandler.qml\n'}
 with tempfile.TemporaryDirectory() as tmp:
  for name,text in stubs.items():
   p=Path(tmp)/name;p.parent.mkdir(parents=True,exist_ok=True);p.write_text(text)
  preview=Path(tmp)/"Preview.qml"
- fixture=json.loads((root/"widget.json").read_text())["defaults"]
+ fixture=json.loads((package/"widget.json").read_text())["defaults"]
  preview.write_text('''import QtQuick
 import qs.Commons
-import "'''+root.as_uri()+'''" as Widget
-import "'''+(root/"Model.js").as_uri()+'''" as Model
+import "'''+package.as_uri()+'''" as Widget
+import "'''+(package/"Model.js").as_uri()+'''" as Model
 Window {
  width:800;height:280;visible:true;color:Color.background
  function setLight(value) { Color.light=value; }
  QtObject {
-  id:context;objectName:"context";property var settings:'''+json.dumps(fixture)+''';property bool active:false
+  id:context;objectName:"context";property var settings:'''+json.dumps(fixture)+''';property bool active:false;property string family:"medium"
   property var appearance:({fontFamily:"DejaVu Sans Mono"})
   property int configureRequests:0
   function requestConfigure() { configureRequests++; }
@@ -98,13 +99,27 @@ Window {
    call(clock,"populate")
    assert clock.property("analogue")== (mode=="analogue")
    for name,width,height in [("reference",1000,280),("small",168,168),("medium",376,168),("large",376,376)]:
+    context.setProperty("family",name if name!="reference" else "medium")
     window.setWidth(width);window.setHeight(height)
     snapshot(mode+"-"+name)
    call(window,"setLight",True)
    snapshot(mode+"-light")
    call(window,"setLight",False)
+  for design in ["solar","classic","monolith","twin"]:
+   for mode in ["digital","analogue"]:
+    for light in [False,True]:
+     call(context,"applySettings",json.dumps(dict(original,style=design,displayMode=mode)))
+     call(clock,"populate")
+     call(window,"setLight",light)
+     sizes=[("small",168,168)] if design in ["monolith","twin"] else [("medium",376,168),("large",376,376)]
+     for family,width,height in sizes:
+      context.setProperty("family",family)
+      window.setWidth(width);window.setHeight(height)
+      assert clock.property("small")== (family=="small")
+      assert clock.property("styleName")==design
+      snapshot(design+"-"+mode+"-"+family+("-light" if light else "-dark"))
   if warnings:
    print("\n".join(warnings));app.exit(1);return
-  print("PASS: settings callback (Core owns gear), mode drafts and reload, city edits, home fallback, invalid IDs, both modes at Core content sizes, dark/light rendering")
+  print("PASS: settings callback (Core owns gear), mode drafts and reload, city edits, home fallback, invalid IDs, all four designs and both modes at actual Core families, dark/light rendering")
   app.exit(0)
  QTimer.singleShot(300,check);sys.exit(app.exec())
